@@ -43,13 +43,82 @@ const fetchDataProduct = async (id) => {
         const response = await api.get(`api/product/item/` + id, {
             // params: { id },
         });
-        console.log("munculini:", [response.data.product]);
-        currentOrder.value.push(response.data.product);
-        console.log(currentOrder.value);
+
+        const state = currentOrder.value.some((item) => item.id == id);
+
+        if (state == true) {
+            currentOrder.value = currentOrder.value.map((item) => {
+                if (item.id === id) {
+                    let newQuantity = item.quantity + 1;
+                    return {
+                        ...item,
+                        quantity: newQuantity,
+                    };
+                }
+                return item;
+            });
+        } else {
+            response.data.product.quantity = 1;
+            currentOrder.value.push(response.data.product);
+        }
+        // console.log("munculini:", [response.data.product]);
+        // console.log(currentOrder.value);
     } catch (error) {
         console.error("gagal", error);
     }
 };
+
+// const delete = ref([]);
+const decreaseQty = (id) => {
+    currentOrder.value = currentOrder.value.flatMap((item) => {
+        if (item.id === id) {
+            if (item.quantity > 1) {
+                return {
+                    ...item,
+                    quantity: item.quantity - 1,
+                };
+            } else {
+                // quantity = 1, jadi dihapus
+                return []; // hapus item
+            }
+        }
+        return item; // item lain tetap
+    });
+};
+
+const subtotal = computed(() => {
+    return currentOrder.value.reduce((total, item) => {
+        return total + item.price * item.quantity;
+    }, 0);
+});
+
+const tax = computed(() => {
+    return subtotal.value * 0.12;
+});
+
+const total = computed(() => {
+    return subtotal.value + tax.value;
+});
+
+const cash = async (method = "Cash") => {
+    try {
+      const payload = currentOrder.value.map(item => ({
+    id_product: item.id,
+    quantity: item.quantity,
+    price: item.price,
+    sub_total: item.price * item.quantity,
+    total: subtotal.value + tax.value, // bisa disesuaikan
+}));
+
+        const response = await api.post("/api/transaction/store", payload);
+        console.log("Transaksi berhasil disimpan:", response.data);
+
+        currentOrder.value = [];
+    } catch (error) {
+        console.error("Gagal menyimpan transaksi:", error);
+    }
+};
+
 
 onMounted(() => {
     //call method "fetchDataPosts"
@@ -140,6 +209,12 @@ onMounted(() => {
                             :key="item.id"
                         >
                             <div class="d-flex justify-content-between">
+                                <i
+                                    class="la la-trash fs-2"
+                                    style="color: red; cursor: pointer"
+                                    @click="decreaseQty(item.id)"
+                                ></i>
+
                                 <span
                                     >{{ item.name }} x{{ item.quantity }}</span
                                 >
@@ -151,9 +226,6 @@ onMounted(() => {
                                 Subtotal: <strong>${{ subtotal }}</strong>
                             </p>
                             <p>
-                                Discounts: <strong>-${{ discounts }}</strong>
-                            </p>
-                            <p>
                                 Tax (12%): <strong>${{ tax }}</strong>
                             </p>
                             <p class="fw-bold text-success">
@@ -161,13 +233,13 @@ onMounted(() => {
                             </p>
                         </div>
                         <h6 class="mt-3 fw-bold">💳 Payment Method</h6>
-                        <button class="btn btn-outline-dark w-100 my-1">
+                        <button class="btn btn-outline-secondary w-100 my-1" @click="cash(Cash)">
                             💵 Cash
                         </button>
-                        <button class="btn btn-outline-dark w-100 my-1">
+                        <button class="btn btn-outline-secondary w-100 my-1">
                             💳 Card
                         </button>
-                        <button class="btn btn-outline-dark w-100 my-1">
+                        <button class="btn btn-outline-secondary w-100 my-1">
                             📱 E-Wallet
                         </button>
                     </div>

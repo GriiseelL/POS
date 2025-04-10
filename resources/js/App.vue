@@ -45,7 +45,7 @@ onMounted(() => {
 @import "nouislider/dist/nouislider.css";
 @import "@fortawesome/fontawesome-free/css/all.min.css";
 @import "socicon/css/socicon.css";
-// @import "line-awesome/dist/line-awesome/css/line-awesome.css";
+@import "line-awesome/dist/line-awesome/css/line-awesome.css";
 @import "@vueform/multiselect/themes/default.css";
 @import "prism-themes/themes/prism-shades-of-purple.css";
 @import "element-plus/dist/index.css";

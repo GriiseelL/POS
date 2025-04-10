@@ -22,11 +22,11 @@ class TransactionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "id_product" => "required",
-            "price" => "required",
-            "total" => "required",
-            "sub_total" => "required",
-            "quantity" => "required",
+            '*.id_product' => 'required|exists:products,id',
+            '*.quantity' => 'required|integer|min:1',
+            '*.price' => 'required|numeric|min:0',
+            '*.sub_total' => 'required|numeric|min:0',
+            '*.total' => 'required|numeric|min:0',
         ];
     }
 }

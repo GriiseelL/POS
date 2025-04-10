@@ -39,21 +39,26 @@ class TransactionController extends Controller
 
     public function store(TransactionRequest $request)
     {
-        $validatedData = $request->validated();
-        $transaction = Transaction::create([
-            // 'name' => $validatedData['name'],
-            // 'guard_name' => 'api',
-            'id_product' => $validatedData['id_product'],
-            'price' => $validatedData['price'],
-            'total' => $validatedData['total'],
-            'sub_total' => $validatedData['sub_total'],
-            'quantity' => $validatedData['quantity'],
+       
+    foreach ($request->all() as $item) {
+        DB::table('transactions')->insert([
+            'id_product' => $item['id_product'],
+            'quantity' => $item['quantity'],
+            'price' => $item['price'],
+            'sub_total' => $item['sub_total'],
+            'total' => $item['total'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
+    }
+
+    return response()->json(['message' => 'Transaksi disimpan']);
+// }
         // $product->syncPermissions($validatedData['permissions']);
-        return response()->json([
-            'success' => true,
-            'transaction' => $transaction,
-        ]);
+        // return response()->json([
+        //     'success' => true,
+        //     'transaction' => $transaction,
+        // ]);
     }
 
     public function show(Transaction $transaction)

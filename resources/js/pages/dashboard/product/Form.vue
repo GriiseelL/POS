@@ -36,7 +36,7 @@ function getEdit() {
         .then(({ data }) => {
             console.log(data);
             product.value = data.product;
-            photo.value = data.prod.photo
+            photo.value = data.product.photo
                 ? ["/storage/" + data.product.photo]
                 : [];
             console.log("Kategori Produk:", product.value.id_category);
