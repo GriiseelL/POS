@@ -5,5 +5,6 @@ export interface Transaction {
     price: BigInteger;
     total: BigInteger;
     sub_total: BigInteger;
-    permissions?: Array<string>;
+    transaction_code: string;
+    // permissions?: Array<string>;
 }

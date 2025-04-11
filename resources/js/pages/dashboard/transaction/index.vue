@@ -1,39 +1,27 @@
 <script setup lang="ts">
-import { h, ref, watch } from "vue";
-import { useDelete } from "@/libs/hooks";
-import Form from "./Form.vue";
 import { createColumnHelper } from "@tanstack/vue-table";
+import Form from "./Form.vue";
+import Swal from "sweetalert2";
+import { h, ref, onMounted } from "vue";
 import type { Transaction } from "@/types";
+import axios from "axios";
 
+// STATE
+const showDetail = ref(false);
+const transactionDetails = ref<any[]>([]);
+
+// TABLE COLUMN SETUP
 const column = createColumnHelper<Transaction>();
-const paginateRef = ref<any>(null);
-const selected = ref<number>(0);
-const openForm = ref<boolean>(false);
-
-const { delete: deleteUser } = useDelete({
-    onSuccess: () => paginateRef.value.refetch(),
-});
 
 const columns = [
     column.accessor("no", {
         header: "#",
     }),
-    column.accessor("id_product", {
-        header: "id_product",
+    column.accessor("transaction_code", {
+        header: "Transaction Code",
     }),
-    column.accessor("quantity", {
-        header: "Quantity",
-    }),
-    column.accessor("price", {
-        header: "Price",
-    }),
-    column.accessor("sub_total", {
-        header: "SubTotal",
-    }),
-    column.accessor("total", {
-        header: "Total",
-    }),
-    column.accessor("id", {
+    column.display({
+        id: "action",
         header: "Action",
         cell: (cell) =>
             h("div", { class: "d-flex gap-2" }, [
@@ -41,64 +29,100 @@ const columns = [
                     "button",
                     {
                         class: "btn btn-sm btn-icon btn-info",
-                        onClick: () => {
-                            selected.value = cell.getValue();
-                            openForm.value = true;
-                        },
-                    },
-                    h("i", { class: "la la-pencil fs-2" })
-                ),
-                h(
-                    "button",
-                    {
-                        class: "btn btn-sm btn-icon btn-danger",
                         onClick: () =>
-                            deleteUser(`/transaction/${cell.getValue()}`),
+                            fetchDetail(cell.row.original.transaction_code),
                     },
-                    h("i", { class: "la la-trash fs-2" })
+                    h("i", { class: "la la-eye fs-2" })
                 ),
             ]),
     }),
 ];
 
-const refresh = () => paginateRef.value.refetch();
+const fetchDetail = async (transaction_code: string) => {
+    try {
+        const { data } = await axios.get(
+            `/transaction/detail/${transaction_code}`
+        );
 
-watch(openForm, (val) => {
-    if (!val) {
-        selected.value = "";
+        console.log("📦 RAW response:", data);
+
+        const transaksiList = data.transactions || data.data?.transactions;
+
+        if (!Array.isArray(transaksiList)) {
+            throw new Error("Format data transaksi tidak sesuai.");
+        }
+
+        transactionDetails.value = transaksiList;
+
+        const contentHtml = transaksiList
+            .map(
+                (item, index) => `
+                <div style="text-align: left; margin-bottom: 8px;">
+                    <strong>Item ${index + 1}</strong><br/>
+                      Nama: ${
+                          item.product_name || "Produk tidak ditemukan"
+                      }<br/>
+                    Jumlah: ${item.quantity}<br/>
+                </div>
+            `
+            )
+            .join("");
+
+        Swal.fire({
+            title: "Detail Transaksi",
+            html: contentHtml || "Tidak ada detail.",
+            confirmButtonText: "Tutup",
+            width: 600,
+            customClass: {
+                popup: "text-left",
+            },
+        });
+    } catch (err: any) {
+        console.error("❌ Gagal ambil data detail:", err);
+        Swal.fire({
+            icon: "error",
+            title: "Gagal",
+            text:
+                err.response?.data?.message ||
+                err.message ||
+                "Tidak bisa ambil detail transaksi.",
+        });
     }
-    window.scrollTo(0, 0);
+};
+
+onMounted(() => {
+    console.log("✅ Komponen TransactionDetail berhasil dimount!");
 });
 </script>
 
 <template>
-    <Form
-        :selected="selected"
-        @close="openForm = false"
-        v-if="openForm"
-        @refresh="refresh"
-    />
+    <!-- MODAL -->
+    <!-- <TransactionDetail
+        v-if="showDetail"
+        :detailData="transactionDetails"
+        @close="showDetail = false"
+    /> -->
 
+    <!-- MAIN CONTENT -->
     <div class="card">
-        <div class="card-header align-items-center">
-            <h2 class="mb-0">List Transaction</h2>
-            <button
-                type="button"
-                class="btn btn-sm btn-primary ms-auto"
-                v-if="!openForm"
-                @click="openForm = true"
-            >
-                Tambah
-                <i class="la la-plus"></i>
-            </button>
-        </div>
+        <!-- <div class="card-header align-items-center d-flex">
+      <h2 class="mb-0">List Transaction</h2>
+      <button
+        type="button"
+        class="btn btn-sm btn-primary ms-auto"
+        @click="openForm = true"
+      >
+        Tambah
+        <i class="la la-plus"></i>
+      </button>
+    </div> -->
         <div class="card-body">
             <paginate
                 ref="paginateRef"
                 id="table-product"
                 url="/transaction"
                 :columns="columns"
-            ></paginate>
+            />
         </div>
     </div>
 </template>

@@ -37,9 +37,13 @@ class TransactionController extends Controller
         //     ->paginate($per, ['*', DB::raw('@no := @no + 1 AS no')]);
         $data = Transaction::select('transaction_code', DB::raw('MAX(created_at) as created_at'), DB::raw('@no := @no + 1 AS no'))
             ->groupBy('transaction_code')
-            ->latest('created_at')
-            ->paginate($per);
-        ;
+            ->latest()->paginate($per);
+
+        $no = ($data->currentPage()-1) * $per + 1;
+        foreach($data as $item){
+            $item->no = $no++;  };
+            // ->latest('created_at')
+            // ->paginate($per);
 
         return response()->json($data);
     }
@@ -71,23 +75,23 @@ class TransactionController extends Controller
         // ]);
     }
 
-    public function show(Transaction $transaction)
+    public function show($transaction_code)
     {
+        $details = DB::table('transactions')
+            ->join('products', 'transactions.id_product', '=', 'products.id')
+            ->where('transactions.transaction_code', $transaction_code)
+            ->select(
+                'transactions.*',
+                'products.name as product_name'
+            )
+            ->get();
 
-        $transaction->load('product');
-        // $product = Product::find($id);
         return response()->json([
-            'transaction' => [
-                // 'transaction_code' => $transactionCode,
-                // 'name' => $transaction->name,
-                'id_product' => $transaction->id_product,
-                'price' => $transaction->price,
-                'total' => $transaction->total,
-                'sub_total' => $transaction->sub_total,
-                'quantity' => $transaction->quantity,
-            ]
+            'transactions' => $details
         ]);
     }
+
+
 
     public function update(TransactionRequest $request, Transaction $transaction)
     {
