@@ -68,12 +68,12 @@ const MainMenuConfig: Array<MenuItem> = [
                     },
                 ],
             },
-            // {
-            //     heading: "Transaction",
-            //     route: "/dashboard/transaction",
-            //     name: "transaction",
-            //     keenthemesIcon: "bill",
-            // },
+            {
+                heading: "Transaction",
+                route: "/dashboard/transaction",
+                name: "transaction",
+                keenthemesIcon: "bill",
+            },
             {
                 heading: "Sale",
                 route: "/dashboard/sale",

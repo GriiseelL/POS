@@ -53,7 +53,7 @@ const columns = [
                     {
                         class: "btn btn-sm btn-icon btn-danger",
                         onClick: () =>
-                            deleteUser(`/product/product/${cell.getValue()}`),
+                            deleteUser(`/transaction/${cell.getValue()}`),
                     },
                     h("i", { class: "la la-trash fs-2" })
                 ),

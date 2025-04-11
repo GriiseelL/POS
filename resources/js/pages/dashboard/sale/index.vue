@@ -100,15 +100,25 @@ const total = computed(() => {
     return subtotal.value + tax.value;
 });
 
+const generateTransactionCode = () => {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
+    const random = Math.floor(1000 + Math.random() * 9000); // 4 digit acak
+    return `TRX${dateStr}${random}`;
+};
+
 const cash = async (method = "Cash") => {
     try {
-      const payload = currentOrder.value.map(item => ({
-    id_product: item.id,
-    quantity: item.quantity,
-    price: item.price,
-    sub_total: item.price * item.quantity,
-    total: subtotal.value + tax.value, // bisa disesuaikan
-}));
+        const code = generateTransactionCode();
+
+        const payload = currentOrder.value.map((item) => ({
+            transaction_code: code,
+            id_product: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            sub_total: item.price * item.quantity,
+            total: subtotal.value + tax.value, // bisa disesuaikan
+        }));
 
         const response = await api.post("/api/transaction/store", payload);
         console.log("Transaksi berhasil disimpan:", response.data);
@@ -118,7 +128,6 @@ const cash = async (method = "Cash") => {
         console.error("Gagal menyimpan transaksi:", error);
     }
 };
-
 
 onMounted(() => {
     //call method "fetchDataPosts"
@@ -233,7 +242,10 @@ onMounted(() => {
                             </p>
                         </div>
                         <h6 class="mt-3 fw-bold">💳 Payment Method</h6>
-                        <button class="btn btn-outline-secondary w-100 my-1" @click="cash(Cash)">
+                        <button
+                            class="btn btn-outline-secondary w-100 my-1"
+                            @click="cash(Cash)"
+                        >
                             💵 Cash
                         </button>
                         <button class="btn btn-outline-secondary w-100 my-1">
