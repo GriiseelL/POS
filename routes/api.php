@@ -76,7 +76,7 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
         Route::get('transaction', [TransactionController::class, 'get'])->withoutMiddleware('can:transaction');
         Route::post('transaction', [TransactionController::class, 'index']);
         Route::post('transaction/store', [TransactionController::class, 'store']);
-        Route::get('transaction/detail/{transaction_code}', [TransactionController::class, 'show']);
+        Route::get('transaction/detail/{id_transaksi}', [TransactionController::class, 'show']);
         Route::apiResource('transaction', TransactionController::class)
             ->except(['index', 'store']);
     });

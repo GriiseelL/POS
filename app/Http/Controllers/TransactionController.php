@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TransactionRequest;
 use App\Models\Transaction;
+use App\Models\Transaction_product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,8 +36,8 @@ class TransactionController extends Controller
         //     })
         //     ->latest()
         //     ->paginate($per, ['*', DB::raw('@no := @no + 1 AS no')]);
-        $data = Transaction::select('transaction_code', DB::raw('MAX(created_at) as created_at'), DB::raw('@no := @no + 1 AS no'))
-            ->groupBy('transaction_code')
+        $data = Transaction::select('transaction_code','id')
+            // ->groupBy('transaction_code')
             ->latest()->paginate($per);
 
         $no = ($data->currentPage()-1) * $per + 1;
@@ -75,14 +76,15 @@ class TransactionController extends Controller
         // ]);
     }
 
-    public function show($transaction_code)
+    public function show($id_transaksi)
     {
-        $details = DB::table('transactions')
-            ->join('products', 'transactions.id_product', '=', 'products.id')
-            ->where('transactions.transaction_code', $transaction_code)
+        $details =  Transaction_product::where('id_transaksi', $id_transaksi)
+            ->join('products', 'transaction_product.id_product', '=', 'products.id')
+            // ->where('transactions.transaction_code', $transaction_code)
             ->select(
-                'transactions.*',
-                'products.name as product_name'
+                'transaction_product.*',
+                'products.name as product_name',
+                'products.price as product_price'
             )
             ->get();
 

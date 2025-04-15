@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { block, unblock } from "@/libs/utils";
 import { onMounted, ref, watch, computed } from "vue";
+import Swal from "sweetalert2";
 import * as Yup from "yup";
 import axios from "@/libs/axios";
 import type { Category } from "@/types";
@@ -124,10 +125,29 @@ const cash = async (method = "Cash") => {
         console.log("Transaksi berhasil disimpan:", response.data);
 
         currentOrder.value = [];
-    } catch (error) {
+
+        //SweetAlert sukses
+        Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Transaksi berhasil disimpan!",
+            confirmButtonText: "Oke",
+        });
+    } catch (error: any) {
         console.error("Gagal menyimpan transaksi:", error);
+
+        //SweetAlert error
+        Swal.fire({
+            icon: "error",
+            title: "Gagal",
+            text:
+                error.response?.data?.message ||
+                error.message ||
+                "Terjadi kesalahan saat menyimpan transaksi.",
+        });
     }
 };
+
 
 onMounted(() => {
     //call method "fetchDataPosts"
@@ -142,7 +162,7 @@ onMounted(() => {
             <div class="col-md-3">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="fw-bold">📁 Categories</h5>
+                        <h5 class="fw-bold">Categories</h5>
                         <button
                             @click="fetchProducts(category.id)"
                             class="btn btn-outline-secondary w-100 my-1 text-start"
@@ -162,10 +182,7 @@ onMounted(() => {
                         <div
                             class="d-flex justify-content-between align-items-center mb-2"
                         >
-                            <h5 class="fw-bold">🛒 Product List</h5>
-                            <button class="btn btn-primary">
-                                + Add Product
-                            </button>
+                            <h5 class="fw-bold">Product List</h5>
                         </div>
                         <div class="row g-2">
                             <div

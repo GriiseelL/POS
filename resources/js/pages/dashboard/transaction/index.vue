@@ -30,7 +30,7 @@ const columns = [
                     {
                         class: "btn btn-sm btn-icon btn-info",
                         onClick: () =>
-                            fetchDetail(cell.row.original.transaction_code),
+                            fetchDetail(cell.row.original.id),
                     },
                     h("i", { class: "la la-eye fs-2" })
                 ),
@@ -38,10 +38,11 @@ const columns = [
     }),
 ];
 
-const fetchDetail = async (transaction_code: string) => {
+const fetchDetail = async (id_transaksi: string) => {
+    console.log(id_transaksi)
     try {
         const { data } = await axios.get(
-            `/transaction/detail/${transaction_code}`
+            `/transaction/detail/${id_transaksi}`
         );
 
         console.log("📦 RAW response:", data);
@@ -63,14 +64,27 @@ const fetchDetail = async (transaction_code: string) => {
                           item.product_name || "Produk tidak ditemukan"
                       }<br/>
                     Jumlah: ${item.quantity}<br/>
-                </div>
-            `
+                    <strong>price ${item.product_price}</strong> <br/>
+                    <strong>SubTotal ${item.sub_total}</strong>
+                    </div>
+                    `
             )
             .join("");
 
+       const totalTransaksi = Number(transaksiList[0]?.total || 0);
+
+
+
+        const finalHtml = `
+                ${contentHtml}
+                <div style="text-align: left; margin-top: 12px;">
+                 <strong>Total (termasuk pajak): ${(totalTransaksi)}</strong>
+                </div>
+                `;
+
         Swal.fire({
             title: "Detail Transaksi",
-            html: contentHtml || "Tidak ada detail.",
+            html: finalHtml  || "Tidak ada detail.",
             confirmButtonText: "Tutup",
             width: 600,
             customClass: {
