@@ -11,10 +11,21 @@ class Transaction_product extends Model
 
     
     protected $fillable = [
-        "id_prodct",
+        "id_product",
         "id_transaksi",
         "quantity",
     ];
 
     protected $table = 'transaction_product';
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'id_transaksi');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'id_product');
+    }
+
 }

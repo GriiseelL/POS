@@ -36,49 +36,73 @@ class TransactionController extends Controller
         //     })
         //     ->latest()
         //     ->paginate($per, ['*', DB::raw('@no := @no + 1 AS no')]);
-        $data = Transaction::select('transaction_code','id')
+        $data = Transaction::select('transaction_code', 'id')
             // ->groupBy('transaction_code')
             ->latest()->paginate($per);
 
-        $no = ($data->currentPage()-1) * $per + 1;
-        foreach($data as $item){
-            $item->no = $no++;  };
-            // ->latest('created_at')
-            // ->paginate($per);
+        $no = ($data->currentPage() - 1) * $per + 1;
+        foreach ($data as $item) {
+            $item->no = $no++;
+        }
+        ;
+        // ->latest('created_at')
+        // ->paginate($per);
 
         return response()->json($data);
     }
 
+    public function indexpdf()
+    {
+        $data = Transaction::with('details.product')
+            ->select('id', 'transaction_code', 'total', 'created_at')
+            ->get();
+
+        return view('laporan', ['transactions' => $data]);
+    }
+
     public function store(TransactionRequest $request)
     {
+        DB::beginTransaction();
 
-        $transactionCode = 'TRX-' . strtoupper(Str::random(8));
+        try {
+            $transactionCode = 'TRX-' . strtoupper(Str::random(8));
 
-        foreach ($request->all() as $item) {
-            DB::table('transactions')->insert([
+            // Ambil item pertama untuk dapatkan total (misalnya semua item punya total/sub_total sama)
+            $firstItem = $request->all()[0];
+
+            // Simpan ke tabel transactions
+            $transactionId = DB::table('transactions')->insertGetId([
                 'transaction_code' => $transactionCode,
-                'id_product' => $item['id_product'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'sub_total' => $item['sub_total'],
-                'total' => $item['total'],
+                'total' => $firstItem['total'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-        }
 
-        return response()->json(['message' => 'Transaksi disimpan']);
-        // }
-        // $product->syncPermissions($validatedData['permissions']);
-        // return response()->json([
-        //     'success' => true,
-        //     'transaction' => $transaction,
-        // ]);
+            // Simpan masing-masing item ke transaction_products
+            foreach ($request->all() as $item) {
+                DB::table('transaction_product')->insert([
+                    'id_transaksi' => $transactionId,
+                    'id_product' => $item['id_product'],
+                    'quantity' => $item['quantity'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json(['message' => 'Transaksi disimpan']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Gagal menyimpan transaksi', 'details' => $e->getMessage()], 500);
+        }
     }
+
 
     public function show($id_transaksi)
     {
-        $details =  Transaction_product::where('id_transaksi', $id_transaksi)
+        $details = Transaction_product::where('id_transaksi', $id_transaksi)
             ->join('products', 'transaction_product.id_product', '=', 'products.id')
             // ->where('transactions.transaction_code', $transaction_code)
             ->select(
@@ -94,36 +118,17 @@ class TransactionController extends Controller
     }
 
 
-
-    public function update(TransactionRequest $request, Transaction $transaction)
+    public function download_pdf()
     {
-        $validatedData = $request->validated();
+        $mpdf = new \Mpdf\Mpdf();
 
-        $transaction->update([
-            // 'name' => $validatedData['name'],
-            // 'guard_name' => 'api',
-            'id_product' => $validatedData['id_product'],
-            'price' => $validatedData['price'],
-            'total' => $validatedData['total'],
-            'quantity' => $validatedData['quantity'],
-            'sub_total' => $validatedData['sub_total'],
-            // 'permissions' => $product->permissions->pluck('name')
-        ]);
+        $data = Transaction::with('details.product')
+            ->select('id', 'transaction_code', 'total', 'created_at')
+            ->get();
 
-        // $product->syncPermissions($validatedData['permissions']);
+        $html = view('laporan', ['transactions' => $data])->render();
 
-        return response()->json([
-            'success' => true,
-            'transaction' => $transaction
-        ]);
-    }
-
-    public function destroy(Transaction $transaction)
-    {
-        $transaction->delete();
-
-        return response()->json([
-            'success' => true
-        ]);
+        $mpdf->WriteHTML($html);
+        $mpdf->Output('laporan-penjualan.pdf', 'D'); // "D" = langsung download
     }
 }

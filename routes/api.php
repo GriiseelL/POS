@@ -77,6 +77,7 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
         Route::post('transaction', [TransactionController::class, 'index']);
         Route::post('transaction/store', [TransactionController::class, 'store']);
         Route::get('transaction/detail/{id_transaksi}', [TransactionController::class, 'show']);
+        Route::get('transaction/view/pdf', [TransactionController::class, 'view_pdf']);
         Route::apiResource('transaction', TransactionController::class)
             ->except(['index', 'store']);
     });

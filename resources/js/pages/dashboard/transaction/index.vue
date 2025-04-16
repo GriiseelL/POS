@@ -29,8 +29,7 @@ const columns = [
                     "button",
                     {
                         class: "btn btn-sm btn-icon btn-info",
-                        onClick: () =>
-                            fetchDetail(cell.row.original.id),
+                        onClick: () => fetchDetail(cell.row.original.id),
                     },
                     h("i", { class: "la la-eye fs-2" })
                 ),
@@ -39,11 +38,9 @@ const columns = [
 ];
 
 const fetchDetail = async (id_transaksi: string) => {
-    console.log(id_transaksi)
+    console.log(id_transaksi);
     try {
-        const { data } = await axios.get(
-            `/transaction/detail/${id_transaksi}`
-        );
+        const { data } = await axios.get(`/transaction/detail/${id_transaksi}`);
 
         console.log("📦 RAW response:", data);
 
@@ -65,26 +62,26 @@ const fetchDetail = async (id_transaksi: string) => {
                       }<br/>
                     Jumlah: ${item.quantity}<br/>
                     <strong>price ${item.product_price}</strong> <br/>
-                    <strong>SubTotal ${item.sub_total}</strong>
+                    <strong>SubTotal ${
+                        item.product_price * item.quantity
+                    }</strong>
                     </div>
                     `
             )
             .join("");
 
-       const totalTransaksi = Number(transaksiList[0]?.total || 0);
-
-
+        const totalTransaksi = Number(transaksiList[0]?.total || 0);
 
         const finalHtml = `
                 ${contentHtml}
                 <div style="text-align: left; margin-top: 12px;">
-                 <strong>Total (termasuk pajak): ${(totalTransaksi)}</strong>
+                 <strong>Total (termasuk pajak): ${totalTransaksi}</strong>
                 </div>
                 `;
 
         Swal.fire({
             title: "Detail Transaksi",
-            html: finalHtml  || "Tidak ada detail.",
+            html: finalHtml || "Tidak ada detail.",
             confirmButtonText: "Tutup",
             width: 600,
             customClass: {
@@ -119,17 +116,15 @@ onMounted(() => {
 
     <!-- MAIN CONTENT -->
     <div class="card">
-        <!-- <div class="card-header align-items-center d-flex">
-      <h2 class="mb-0">List Transaction</h2>
-      <button
-        type="button"
-        class="btn btn-sm btn-primary ms-auto"
-        @click="openForm = true"
-      >
-        Tambah
-        <i class="la la-plus"></i>
-      </button>
-    </div> -->
+        <div class="card-header align-items-center d-flex">
+            <h2 class="mb-0">List Transaction</h2>
+            <a :href="'/transaction/download'">
+                <button class="btn btn-sm btn-primary ms-auto">
+                    Download
+                    <i class="la la-download"></i>
+                </button>
+            </a>
+        </div>
         <div class="card-body">
             <paginate
                 ref="paginateRef"
