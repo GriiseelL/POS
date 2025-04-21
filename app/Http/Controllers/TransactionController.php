@@ -66,11 +66,8 @@ class TransactionController extends Controller
 
         try {
             $transactionCode = 'TRX-' . strtoupper(Str::random(8));
-
-            // Ambil item pertama untuk dapatkan total (misalnya semua item punya total/sub_total sama)
             $firstItem = $request->all()[0];
 
-            // Simpan ke tabel transactions
             $transactionId = DB::table('transactions')->insertGetId([
                 'transaction_code' => $transactionCode,
                 'total' => $firstItem['total'],
@@ -78,8 +75,17 @@ class TransactionController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // Simpan masing-masing item ke transaction_products
             foreach ($request->all() as $item) {
+                // Cek stok dulu
+                $product = DB::table('products')->where('id', $item['id_product'])->first();
+                if (!$product || $product->stock < $item['quantity']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Stok produk habis'
+                    ], 400);
+                }
+
+                // Simpan detail transaksi
                 DB::table('transaction_product')->insert([
                     'id_transaksi' => $transactionId,
                     'id_product' => $item['id_product'],
@@ -87,16 +93,23 @@ class TransactionController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+
+                // Kurangi stok
+                DB::table('products')->where('id', $item['id_product'])->update([
+                    'stock' => $product->stock - $item['quantity'],
+                ]);
             }
 
             DB::commit();
-
             return response()->json(['message' => 'Transaksi disimpan']);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Gagal menyimpan transaksi', 'details' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
+
     }
 
 

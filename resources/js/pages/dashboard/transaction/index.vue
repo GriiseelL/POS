@@ -50,6 +50,12 @@ const fetchDetail = async (id_transaksi: string) => {
             throw new Error("Format data transaksi tidak sesuai.");
         }
 
+        const formatRupiah = (num: number) =>
+            new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+            }).format(num);
+
         transactionDetails.value = transaksiList;
 
         const contentHtml = transaksiList
@@ -57,27 +63,31 @@ const fetchDetail = async (id_transaksi: string) => {
                 (item, index) => `
                 <div style="text-align: left; margin-bottom: 8px;">
                     <strong>Item ${index + 1}</strong><br/>
-                      Nama: ${
-                          item.product_name || "Produk tidak ditemukan"
-                      }<br/>
+                    Nama: ${item.product_name || "Produk tidak ditemukan"}<br/>
                     Jumlah: ${item.quantity}<br/>
-                    <strong>price ${item.product_price}</strong> <br/>
-                    <strong>SubTotal ${
-                        item.product_price * item.quantity
-                    }</strong>
-                    </div>
-                    `
+                    <strong>Harga: ${formatRupiah(item.product_price)}</strong><br/>
+                </div>
+            `
             )
             .join("");
 
-        const totalTransaksi = Number(transaksiList[0]?.total || 0);
+        const pajakPersen = 12;
+
+        const subtotal = transaksiList.reduce((sum, item) => {
+            return sum + Number(item.product_price) * Number(item.quantity);
+        }, 0);
+
+        const pajak = subtotal * pajakPersen / 100;
+        const totalTransaksi = subtotal + pajak;
 
         const finalHtml = `
-                ${contentHtml}
-                <div style="text-align: left; margin-top: 12px;">
-                 <strong>Total (termasuk pajak): ${totalTransaksi}</strong>
-                </div>
-                `;
+            ${contentHtml}
+            <div style="text-align: left; margin-top: 12px;">
+                <strong>Subtotal: ${formatRupiah(subtotal)}</strong><br/>
+                <strong>Pajak (${pajakPersen}%): ${formatRupiah(pajak)}</strong><br/>
+                <strong>Total (termasuk pajak): ${formatRupiah(totalTransaksi)}</strong>
+            </div>
+        `;
 
         Swal.fire({
             title: "Detail Transaksi",
@@ -100,6 +110,7 @@ const fetchDetail = async (id_transaksi: string) => {
         });
     }
 };
+
 
 onMounted(() => {
     console.log("✅ Komponen TransactionDetail berhasil dimount!");

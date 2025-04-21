@@ -60,7 +60,8 @@
 
 <body>
   <div class="header">
-    <h2>Laporan Transaksi</h2>
+    <h1>TOKO MOBIL CALAEL</h1>
+    <h2>Laproan Transaksi</h2>
     <small>{{ \Carbon\Carbon::now()->format('d M Y H:i') }}</small>
   </div>
 

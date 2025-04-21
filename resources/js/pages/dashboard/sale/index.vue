@@ -228,7 +228,7 @@ onMounted(() => {
             <div class="col-md-3">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="fw-bold">📋 Current Order</h5>
+                        <h5 class="fw-bold"> Current Order</h5>
                         <div
                             class="border-bottom pb-2 mb-2"
                             v-for="item in currentOrder"
@@ -258,19 +258,19 @@ onMounted(() => {
                                 Total: ${{ total }}
                             </p>
                         </div>
-                        <h6 class="mt-3 fw-bold">💳 Payment Method</h6>
+                        <h6 class="mt-3 fw-bold">Payment Status</h6>
                         <button
                             class="btn btn-outline-secondary w-100 my-1"
                             @click="cash(Cash)"
                         >
-                            💵 Cash
+                            Lunas
                         </button>
-                        <button class="btn btn-outline-secondary w-100 my-1">
+                        <!-- <button class="btn btn-outline-secondary w-100 my-1">
                             💳 Card
                         </button>
                         <button class="btn btn-outline-secondary w-100 my-1">
                             📱 E-Wallet
-                        </button>
+                        </button> -->
                     </div>
                 </div>
             </div>

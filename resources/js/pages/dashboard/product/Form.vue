@@ -166,12 +166,19 @@ watch(
                         </label>
                         <Field
                             class="form-control form-control-lg form-control-solid"
-                            type="text"
+                            type="number"
                             name="stock"
                             autocomplete="off"
+                            min="0"
                             v-model="product.stock"
                             placeholder="Masukkan Stok"
+                            style="
+                                appearance: auto;
+                                -moz-appearance: auto;
+                                -webkit-appearance: auto;
+                            "
                         />
+
                         <div class="fv-plugins-message-container">
                             <div class="fv-help-block">
                                 <ErrorMessage name="stock" />
@@ -243,3 +250,17 @@ watch(
         </div>
     </VForm>
 </template>
+
+<style>
+/* Untuk Chrome, Safari, Edge */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: auto;
+    margin: 0;
+}
+
+/* Untuk Firefox */
+input[type="number"] {
+    -moz-appearance: number-input;
+}
+</style>

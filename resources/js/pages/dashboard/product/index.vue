@@ -70,7 +70,7 @@ const columns = [
                     {
                         class: "btn btn-sm btn-icon btn-danger",
                         onClick: () =>
-                            deleteUser(`/product/product/${cell.getValue()}`),
+                            xdeleteUser(`/product/product/${cell.getValue()}`),
                     },
                     h("i", { class: "la la-trash fs-2" })
                 ),
