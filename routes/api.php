@@ -80,5 +80,6 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
         Route::get('transaction/view/pdf', [TransactionController::class, 'view_pdf']);
         Route::apiResource('transaction', TransactionController::class)
             ->except(['index', 'store']);
+        });
     });
-});
+    Route::get('transactionabc', [TransactionController::class, 'invoice']);
