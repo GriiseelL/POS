@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Apr 09, 2025 at 01:01 PM
+-- Generation Time: Apr 21, 2025 at 11:24 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.3.16
 
@@ -30,7 +30,6 @@ SET time_zone = "+00:00";
 CREATE TABLE `categories` (
   `id` int NOT NULL,
   `name` varchar(100) NOT NULL,
-  `photo` varchar(256) NOT NULL,
   `created_at` timestamp NOT NULL,
   `updated_at` timestamp NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -39,10 +38,11 @@ CREATE TABLE `categories` (
 -- Dumping data for table `categories`
 --
 
-INSERT INTO `categories` (`id`, `name`, `photo`, `created_at`, `updated_at`) VALUES
-(1, 'Sedan', '0', '2025-03-25 03:18:29', '2025-03-25 03:18:34'),
-(5, 'Mobil Sport', '0', '2025-03-26 18:38:23', '2025-03-26 18:38:23'),
-(6, 'Pickup', '0', '2025-03-28 06:23:03', '2025-03-28 06:23:03');
+INSERT INTO `categories` (`id`, `name`, `created_at`, `updated_at`) VALUES
+(1, 'Sedan', '2025-03-25 03:18:29', '2025-03-25 03:18:34'),
+(5, 'Mobil Sport', '2025-03-26 18:38:23', '2025-03-26 18:38:23'),
+(6, 'Pickup', '2025-03-28 06:23:03', '2025-03-28 06:23:03'),
+(8, 'Hatchback', '2025-04-20 19:42:33', '2025-04-20 19:42:33');
 
 -- --------------------------------------------------------
 
@@ -199,7 +199,10 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `name`, `id_category`, `price`, `stock`, `photo`, `created_at`, `updated_at`) VALUES
-(22, 'Rolls-Royce La Rose Noire Droptail', 1, 2000000000, 2, 'photo/jVOzCKwY27FueIsxcxvR7pd8USL4aUYAle1aeqUN.jpg', '2025-04-08 20:49:27', '2025-04-08 21:31:44');
+(22, 'Rolls-Royce La Rose Noire Droptail', 5, 2000000000, 2, 'photo/rehCgjI9G8agOQMkoOSppb2hdVK4YooSI4TejBMv.jpg', '2025-04-08 20:49:27', '2025-04-20 19:48:30'),
+(23, 'Porsche Taycan', 1, 5000000000, 5, 'photo/sMAFTSgm1bJIT3LwBmJkFL2fvsR48MJTx3YpYw1H.jpg', '2025-04-09 20:53:36', '2025-04-16 19:59:13'),
+(24, 'Toyota Hilux Single Cab', 6, 500000000, 10, 'photo/Qb3IPIfcDBaPoiO1KO7Fq87N4Yo7aknXo7kEA9MR.jpg', '2025-04-14 23:24:22', '2025-04-20 19:48:43'),
+(26, 'Honda Brio', 8, 258000000, 0, 'photo/sEwkKWxU7Ddxz72y889ERs6qmMEsxFqpHgYI0BoD.jpg', '2025-04-20 19:47:56', '2025-04-20 19:47:56');
 
 -- --------------------------------------------------------
 
@@ -279,7 +282,7 @@ CREATE TABLE `settings` (
 --
 
 INSERT INTO `settings` (`id`, `uuid`, `app`, `description`, `logo`, `banner`, `bg_auth`, `dinas`, `pemerintah`, `alamat`, `telepon`, `email`, `created_at`, `updated_at`) VALUES
-(1, '43f9fd64-aad4-4342-ae71-e03c166ce28c', 'e-SAKIP DLH', 'Aplikasi e-SAKIP Dinas Lingkungan Hidup', '/storage/setting/sMvbAU2izU2GarnNarlzVrypZNQtbKPZHP4347QT.jpg', '/media/misc/banner.jpg', '/storage/setting/9812ybCxyukpDszbyz2GzlO45E7E8izvJYSLTYFc.jpg', 'Dinas Lingkungan Hidup', 'Pemerintah Provinsi Jawa Timur', 'gunung sari indah blok g no 23', '085755502868', 'grizeldaagnurindrag@gmail.com', '2025-03-20 06:29:58', '2025-03-21 22:12:47');
+(1, '43f9fd64-aad4-4342-ae71-e03c166ce28c', 'e-MOBIL PNG', 'Aplikasi Toko mobil', '/storage/setting/LCPBD5TaORVoNh5e5LyUC4LtSdsSn0JDowuDwUT6.jpg', '/media/misc/banner.jpg', '/storage/setting/oOIDAorfQlrilqeYcq83jMZES4b5lxVXjvv5nK3H.jpg', 'Dinas Lingkungan Hidup', 'Pemerintah Provinsi Jawa Timur', 'gunung sari indah blok g no 23', '085755502868', 'grizeldaagnurindrag@gmail.com', '2025-03-20 06:29:58', '2025-04-20 21:43:31');
 
 -- --------------------------------------------------------
 
@@ -289,14 +292,57 @@ INSERT INTO `settings` (`id`, `uuid`, `app`, `description`, `logo`, `banner`, `b
 
 CREATE TABLE `transactions` (
   `id` int NOT NULL,
-  `id_product` int NOT NULL,
-  `quantity` int NOT NULL,
-  `price` decimal(10,9) NOT NULL,
-  `sub_total` decimal(10,9) NOT NULL,
-  `total` decimal(10,9) NOT NULL,
+  `transaction_code` varchar(100) NOT NULL,
+  `total` float NOT NULL,
   `created_at` timestamp NOT NULL,
   `updated_at` timestamp NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `transactions`
+--
+
+INSERT INTO `transactions` (`id`, `transaction_code`, `total`, `created_at`, `updated_at`) VALUES
+(16, 'TRX-ASGRNV', 3300000000, '2025-04-15 12:33:06', '2025-04-15 12:33:06'),
+(21, 'TRX-99YRAIU3', 5600000000, '2025-04-15 21:07:40', '2025-04-15 21:07:40'),
+(24, 'TRX-ZDKYTNDK', 2240000000, '2025-04-16 01:29:45', '2025-04-16 01:29:45'),
+(25, 'TRX-3EXYQIWI', 2240000000, '2025-04-16 01:30:08', '2025-04-16 01:30:08'),
+(28, 'TRX-HX3ANXX8', 5600000000, '2025-04-16 01:54:19', '2025-04-16 01:54:19'),
+(31, 'TRX-ZUP0I6NI', 560000000, '2025-04-16 18:50:39', '2025-04-16 18:50:39'),
+(32, 'TRX-VJP6C0GH', 5600000000, '2025-04-16 19:57:20', '2025-04-16 19:57:20'),
+(37, 'TRX-EEQFI8WB', 560000000, '2025-04-16 20:52:41', '2025-04-16 20:52:41'),
+(39, 'TRX-EWVVKZWS', 288960000, '2025-04-20 20:24:53', '2025-04-20 20:24:53');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `transaction_product`
+--
+
+CREATE TABLE `transaction_product` (
+  `id` int NOT NULL,
+  `id_product` int NOT NULL,
+  `id_transaksi` int NOT NULL,
+  `quantity` int NOT NULL,
+  `created_at` timestamp NOT NULL,
+  `updated_at` timestamp NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `transaction_product`
+--
+
+INSERT INTO `transaction_product` (`id`, `id_product`, `id_transaksi`, `quantity`, `created_at`, `updated_at`) VALUES
+(1, 24, 16, 2, '2025-04-15 12:36:13', '2025-04-15 12:36:13'),
+(2, 22, 16, 1, '2025-04-15 12:40:52', '2025-04-15 12:40:52'),
+(3, 23, 21, 1, '2025-04-15 21:07:40', '2025-04-15 21:07:40'),
+(6, 22, 24, 1, '2025-04-16 01:29:45', '2025-04-16 01:29:45'),
+(7, 22, 25, 1, '2025-04-16 01:30:08', '2025-04-16 01:30:08'),
+(9, 23, 28, 1, '2025-04-16 01:54:19', '2025-04-16 01:54:19'),
+(10, 24, 31, 1, '2025-04-16 18:50:39', '2025-04-16 18:50:39'),
+(11, 23, 32, 1, '2025-04-16 19:57:20', '2025-04-16 19:57:20'),
+(12, 24, 37, 1, '2025-04-16 20:52:41', '2025-04-16 20:52:41'),
+(14, 26, 39, 1, '2025-04-20 20:24:53', '2025-04-20 20:24:53');
 
 -- --------------------------------------------------------
 
@@ -414,8 +460,15 @@ ALTER TABLE `settings`
 -- Indexes for table `transactions`
 --
 ALTER TABLE `transactions`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `transaction_product`
+--
+ALTER TABLE `transaction_product`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `id_product` (`id_product`) USING BTREE;
+  ADD KEY `PRODUCT` (`id_product`),
+  ADD KEY `TRANSAKSI` (`id_transaksi`);
 
 --
 -- Indexes for table `users`
@@ -434,7 +487,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `failed_jobs`
@@ -464,7 +517,7 @@ ALTER TABLE `personal_access_tokens`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -482,7 +535,13 @@ ALTER TABLE `settings`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+
+--
+-- AUTO_INCREMENT for table `transaction_product`
+--
+ALTER TABLE `transaction_product`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -520,10 +579,11 @@ ALTER TABLE `role_has_permissions`
   ADD CONSTRAINT `role_has_permissions_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `transactions`
+-- Constraints for table `transaction_product`
 --
-ALTER TABLE `transactions`
-  ADD CONSTRAINT `id` FOREIGN KEY (`id_product`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `transaction_product`
+  ADD CONSTRAINT `PRODUCT` FOREIGN KEY (`id_product`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `TRANSAKSI` FOREIGN KEY (`id_transaksi`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
