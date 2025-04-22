@@ -110,26 +110,22 @@ const generateTransactionCode = () => {
 
 const payWithXendit = async () => {
     try {
-        const code = generateTransactionCode();
+        const payload = currentOrder.value.map((item) => ({
+            id_product: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            sub_total: item.price * item.quantity,
+            total: subtotal.value + tax.value,
+        }));
 
-        const response = await api.post("/api/xendit/invoice", {
-            external_id: code,
-            description: "Pembayaran dari POS",
-            amount: total.value,
-        });
+        const res = await api.post('/api/xendit/store', payload);
 
-        const invoiceUrl = response.data.invoice_url;
-        console.log("Xendit invoice URL:", invoiceUrl);
-
-        window.open(invoiceUrl, "_blank");
+        window.location.href = res.data.invoice_url;
     } catch (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Gagal",
-            text: "Gagal membuat invoice Xendit",
-        });
+        Swal.fire('Gagal', 'Tidak bisa membuat invoice', 'error');
     }
 };
+
 
 const cash = async (method = "Cash") => {
     try {

@@ -17,7 +17,8 @@ use Xendit\Invoice\CreateInvoiceRequest;
 class TransactionController extends Controller
 {
 
-    public function invoice(Request $request) {
+    public function invoice(Request $request)
+    {
         Configuration::setXenditKey(env('XENDIT_SECRET'));
 
         $apiInstance = new InvoiceApi();
@@ -39,7 +40,64 @@ class TransactionController extends Controller
             echo 'Full Error: ', json_encode($e->getFullError()), PHP_EOL;
         }
     }
-    
+
+    public function createXendit(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $code = 'TRX-' . strtoupper(Str::random(8));
+            $firstItem = $request->all()[0];
+
+            $transactionId = DB::table('transactions')->insertGetId([
+                'transaction_code' => $code,
+                'total' => $firstItem['total'],
+                // 'status' => 'PENDING',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            foreach ($request->all() as $item) {
+                DB::table('transaction_product')->insert([
+                    'id_transaksi' => $transactionId,
+                    'id_product' => $item['id_product'],
+                    'quantity' => $item['quantity'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('products')
+                    ->where('id', $item['id_product'])
+                    ->decrement('stock', $item['quantity']);
+            }
+
+            Configuration::setXenditKey(env('XENDIT_SECRET'));
+
+            $invoiceRequest = new CreateInvoiceRequest([
+                'external_id' => $code,
+                'description' => 'Pembayaran TRX: ' . $code,
+                'amount' => $firstItem['total'],
+                'invoice_duration' => 3600, // 1 jam
+                'currency' => 'IDR',
+                'reminder_time' => 5,
+                'success_redirect_url' => 'http://127.0.0.1:8000/dashboard/transaction', // redirect setelah bayar
+            ]);
+
+            $invoice = (new InvoiceApi())->createInvoice($invoiceRequest);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Invoice dibuat',
+                'invoice_url' => $invoice['invoice_url'],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+
     public function get(Request $request)
     {
         return response()->json([
