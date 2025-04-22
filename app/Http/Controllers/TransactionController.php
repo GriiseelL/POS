@@ -17,14 +17,14 @@ use Xendit\Invoice\CreateInvoiceRequest;
 class TransactionController extends Controller
 {
 
-    public function invoice() {
+    public function invoice(Request $request) {
         Configuration::setXenditKey(env('XENDIT_SECRET'));
 
         $apiInstance = new InvoiceApi();
         $create_invoice_request = new CreateInvoiceRequest([
-            'external_id' => 'test1234',
-            'description' => 'Test Invoice',
-            'amount' => 10000,
+            'external_id' => $request->external_id, // dari generateTransactionCode()
+            'description' => $request->description,
+            'amount' => $request->amount,
             'invoice_duration' => 172800,
             'currency' => 'IDR',
             'reminder_time' => 1

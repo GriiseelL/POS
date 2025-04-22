@@ -82,4 +82,4 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
             ->except(['index', 'store']);
         });
     });
-    Route::get('transactionabc', [TransactionController::class, 'invoice']);
+    Route::post('xendit/invoice', [TransactionController::class, 'invoice']);

@@ -108,6 +108,29 @@ const generateTransactionCode = () => {
     return `TRX${dateStr}${random}`;
 };
 
+const payWithXendit = async () => {
+    try {
+        const code = generateTransactionCode();
+
+        const response = await api.post("/api/xendit/invoice", {
+            external_id: code,
+            description: "Pembayaran dari POS",
+            amount: total.value,
+        });
+
+        const invoiceUrl = response.data.invoice_url;
+        console.log("Xendit invoice URL:", invoiceUrl);
+
+        window.open(invoiceUrl, "_blank");
+    } catch (error) {
+        Swal.fire({
+            icon: "error",
+            title: "Gagal",
+            text: "Gagal membuat invoice Xendit",
+        });
+    }
+};
+
 const cash = async (method = "Cash") => {
     try {
         const code = generateTransactionCode();
@@ -147,7 +170,6 @@ const cash = async (method = "Cash") => {
         });
     }
 };
-
 
 onMounted(() => {
     //call method "fetchDataPosts"
@@ -228,7 +250,7 @@ onMounted(() => {
             <div class="col-md-3">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="fw-bold"> Current Order</h5>
+                        <h5 class="fw-bold">Current Order</h5>
                         <div
                             class="border-bottom pb-2 mb-2"
                             v-for="item in currentOrder"
@@ -263,14 +285,17 @@ onMounted(() => {
                             class="btn btn-outline-secondary w-100 my-1"
                             @click="cash(Cash)"
                         >
-                            Lunas
-                        </button>
-                        <!-- <button class="btn btn-outline-secondary w-100 my-1">
-                            💳 Card
+                            💵 Cash
                         </button>
                         <button class="btn btn-outline-secondary w-100 my-1">
+                            💳 Card
+                        </button>
+                        <button
+                            class="btn btn-outline-secondary w-100 my-1"
+                            @click="payWithXendit"
+                        >
                             📱 E-Wallet
-                        </button> -->
+                        </button>
                     </div>
                 </div>
             </div>
