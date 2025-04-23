@@ -52,6 +52,7 @@ class TransactionController extends Controller
                 'transaction_code' => $code,
                 'total' => $firstItem['total'],
                 // 'status' => 'PENDING',
+                'metode_pembayaran' => $firstItem['metode_pembayaran'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -121,9 +122,12 @@ class TransactionController extends Controller
         //     })
         //     ->latest()
         //     ->paginate($per, ['*', DB::raw('@no := @no + 1 AS no')]);
-        $data = Transaction::select('transaction_code', 'id')
-            // ->groupBy('transaction_code')
-            ->latest()->paginate($per);
+        $data = Transaction::select('id', 'transaction_code')
+            ->when($request->search, function ($query, $search) {
+                $query->where('transaction_code', 'like', "%$search%");
+            })
+            ->latest()
+            ->paginate($per);
 
         $no = ($data->currentPage() - 1) * $per + 1;
         foreach ($data as $item) {
@@ -156,6 +160,7 @@ class TransactionController extends Controller
             $transactionId = DB::table('transactions')->insertGetId([
                 'transaction_code' => $transactionCode,
                 'total' => $firstItem['total'],
+                'metode_pembayaran' => $firstItem['metode_pembayaran'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -117,7 +117,7 @@ export default defineComponent({
         const { data = {}, isFetching, refetch } = useQuery({
             queryKey: [props.queryKey || props.url],
             queryFn: () => axios.post(props.url, {
-                search: search.value,
+                search:debouncedSearch.value,
                 page: page.value,
                 per: parseInt(per.value),
                 ...props.payload

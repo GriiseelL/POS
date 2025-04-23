@@ -108,24 +108,27 @@ const generateTransactionCode = () => {
     return `TRX${dateStr}${random}`;
 };
 
-const payWithXendit = async () => {
+const payWithXendit = async (method = "Debit") => {
     try {
+        const code = generateTransactionCode();
+
         const payload = currentOrder.value.map((item) => ({
+            transaction_code: code,
             id_product: item.id,
             quantity: item.quantity,
             price: item.price,
+            metode_pembayaran: method,
             sub_total: item.price * item.quantity,
             total: subtotal.value + tax.value,
         }));
 
-        const res = await api.post('/api/xendit/store', payload);
+        const res = await api.post("/api/xendit/store", payload);
 
         window.location.href = res.data.invoice_url;
     } catch (error) {
-        Swal.fire('Gagal', 'Tidak bisa membuat invoice', 'error');
+        Swal.fire("Gagal", "Tidak bisa membuat invoice", "error");
     }
 };
-
 
 const cash = async (method = "Cash") => {
     try {
@@ -136,6 +139,7 @@ const cash = async (method = "Cash") => {
             id_product: item.id,
             quantity: item.quantity,
             price: item.price,
+            metode_pembayaran: method,
             sub_total: item.price * item.quantity,
             total: subtotal.value + tax.value, // bisa disesuaikan
         }));
@@ -288,7 +292,7 @@ onMounted(() => {
                         </button>
                         <button
                             class="btn btn-outline-secondary w-100 my-1"
-                            @click="payWithXendit"
+                            @click="payWithXendit(Debit)"
                         >
                             📱 E-Wallet
                         </button>
