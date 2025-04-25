@@ -84,4 +84,4 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     });
     Route::post('xendit/invoice', [TransactionController::class, 'invoice']);
     Route::post('xendit/store', [TransactionController::class, 'createXendit']);
-// Route::post('webhook/xendit', [App\Http\Controllers\xenditController::class, 'handle']);
+Route::get('xendit/struk', [TransactionController::class, 'getInvoiceById']);

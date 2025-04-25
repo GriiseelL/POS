@@ -46,7 +46,12 @@ const columns = [
     }),
     column.accessor("price", {
         header: "Price",
+        cell: ({ getValue }) => {
+            const value = getValue();
+            return `Rp ${value.toLocaleString("id-ID")}`;
+        },
     }),
+
     column.accessor("stock", {
         header: "Stok",
     }),

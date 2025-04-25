@@ -58,6 +58,13 @@ class TransactionController extends Controller
             ]);
 
             foreach ($request->all() as $item) {
+                $product = DB::table('products')->where('id', $item['id_product'])->first();
+
+                if (!$product || $product->stock < $item['quantity']) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Stok tidak cukup untuk produk: ' . $product->name], 400);
+                }
+
                 DB::table('transaction_product')->insert([
                     'id_transaksi' => $transactionId,
                     'id_product' => $item['id_product'],
@@ -70,6 +77,7 @@ class TransactionController extends Controller
                     ->where('id', $item['id_product'])
                     ->decrement('stock', $item['quantity']);
             }
+
 
             Configuration::setXenditKey(env('XENDIT_SECRET'));
 
@@ -207,10 +215,11 @@ class TransactionController extends Controller
     {
         $details = Transaction_product::where('id_transaksi', $id_transaksi)
             ->join('products', 'transaction_product.id_product', '=', 'products.id')
-            // ->where('transactions.transaction_code', $transaction_code)
+            ->join('transactions', 'transaction_product.id_transaksi', '=', 'transactions.id') // ✅ join ke transaksi
             ->select(
                 'transaction_product.*',
                 'products.name as product_name',
+                'transactions.metode_pembayaran as metode_pembayaran',
                 'products.price as product_price'
             )
             ->get();
@@ -220,7 +229,7 @@ class TransactionController extends Controller
         ]);
     }
 
-
+    
     public function download_pdf()
     {
         $mpdf = new \Mpdf\Mpdf();

@@ -38,19 +38,37 @@ const fetchProducts = async (id_category) => {
 let currentOrder = ref([]);
 
 const fetchDataProduct = async (id) => {
-    // alert(id);
-    // return;
     try {
-        const response = await api.get(`api/product/item/` + id, {
-            // params: { id },
-        });
+        const response = await api.get(`api/product/item/` + id);
+        const product = response.data.product;
 
-        const state = currentOrder.value.some((item) => item.id == id);
+        // ❗ CEK STOK HABIS
+        if (product.stock <= 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Stok Habis",
+                text: "Produk ini tidak bisa dipilih karena stoknya habis!",
+            });
+            return;
+        }
 
-        if (state == true) {
+        // Cek apakah produk sudah ada di currentOrder
+        const state = currentOrder.value.some((item) => item.id === id);
+
+        if (state) {
             currentOrder.value = currentOrder.value.map((item) => {
                 if (item.id === id) {
                     let newQuantity = item.quantity + 1;
+
+                    if (newQuantity > product.stock) {
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Stok Habis",
+                            text: "Jumlah melebihi stok tersedia!",
+                        });
+                        return item;
+                    }
+
                     return {
                         ...item,
                         quantity: newQuantity,
@@ -59,13 +77,11 @@ const fetchDataProduct = async (id) => {
                 return item;
             });
         } else {
-            response.data.product.quantity = 1;
-            currentOrder.value.push(response.data.product);
+            product.quantity = 1;
+            currentOrder.value.push(product);
         }
-        // console.log("munculini:", [response.data.product]);
-        // console.log(currentOrder.value);
     } catch (error) {
-        console.error("gagal", error);
+        console.error("Gagal mengambil data produk:", error);
     }
 };
 
@@ -110,6 +126,19 @@ const generateTransactionCode = () => {
 
 const payWithXendit = async (method = "Debit") => {
     try {
+        // for (let item of currentOrder.value) {
+        //     if (item.stock == null || item.quantity > item.stock) {
+        //         Swal.fire(
+        //             "Stok tidak cukup",
+        //             `Stok produk "${item.name}" hanya tersedia ${
+        //                 item.stock ?? 0
+        //             }`,
+        //             "warning"
+        //         );
+        //         return;
+        //     }
+        // }
+
         const code = generateTransactionCode();
 
         const payload = currentOrder.value.map((item) => ({
@@ -170,6 +199,12 @@ const cash = async (method = "Cash") => {
         });
     }
 };
+
+const formatRupiah = (num: number) =>
+    new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+    }).format(num);
 
 onMounted(() => {
     //call method "fetchDataPosts"
@@ -266,18 +301,18 @@ onMounted(() => {
                                 <span
                                     >{{ item.name }} x{{ item.quantity }}</span
                                 >
-                                <span class="fw-bold">${{ item.price }}</span>
+                                <span class="fw-bold">{{ formatRupiah (item.price) }}</span>
                             </div>
                         </div>
                         <div class="p-2 bg-light border rounded">
                             <p>
-                                Subtotal: <strong>${{ subtotal }}</strong>
+                                Subtotal: <strong>{{ formatRupiah (subtotal) }}</strong>
                             </p>
                             <p>
-                                Tax (12%): <strong>${{ tax }}</strong>
+                                Tax (12%): <strong>{{ formatRupiah (tax) }}</strong>
                             </p>
                             <p class="fw-bold text-success">
-                                Total: ${{ total }}
+                                Total: {{ formatRupiah (total) }}
                             </p>
                         </div>
                         <h6 class="mt-3 fw-bold">Payment Status</h6>

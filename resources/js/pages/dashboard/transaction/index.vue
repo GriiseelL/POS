@@ -65,7 +65,13 @@ const fetchDetail = async (id_transaksi: string) => {
                     <strong>Item ${index + 1}</strong><br/>
                     Nama: ${item.product_name || "Produk tidak ditemukan"}<br/>
                     Jumlah: ${item.quantity}<br/>
-                    <strong>Harga: ${formatRupiah(item.product_price)}</strong><br/>
+                    <strong>Harga: ${formatRupiah(
+                        item.product_price
+                    )}</strong><br/>
+                    <strong>Metode Pembayaran: ${
+                        item.metode_pembayaran
+                    }</strong><br/>
+
                 </div>
             `
             )
@@ -77,15 +83,19 @@ const fetchDetail = async (id_transaksi: string) => {
             return sum + Number(item.product_price) * Number(item.quantity);
         }, 0);
 
-        const pajak = subtotal * pajakPersen / 100;
+        const pajak = (subtotal * pajakPersen) / 100;
         const totalTransaksi = subtotal + pajak;
 
         const finalHtml = `
             ${contentHtml}
             <div style="text-align: left; margin-top: 12px;">
                 <strong>Subtotal: ${formatRupiah(subtotal)}</strong><br/>
-                <strong>Pajak (${pajakPersen}%): ${formatRupiah(pajak)}</strong><br/>
-                <strong>Total (termasuk pajak): ${formatRupiah(totalTransaksi)}</strong>
+                <strong>Pajak (${pajakPersen}%): ${formatRupiah(
+            pajak
+        )}</strong><br/>
+                <strong>Total (termasuk pajak): ${formatRupiah(
+                    totalTransaksi
+                )}</strong>
             </div>
         `;
 
@@ -112,6 +122,20 @@ const fetchDetail = async (id_transaksi: string) => {
 };
 
 
+const loading = ref(false);
+
+const handleDownload = () => {
+  loading.value = true;
+
+  // Simulasi download (ganti dengan aksi nyata)
+  window.location.href = "/transaction/download";
+
+  // Optional: reset loading kalau perlu
+  setTimeout(() => {
+    loading.value = false;
+  }, 3000);
+};
+
 onMounted(() => {
     console.log("✅ Komponen TransactionDetail berhasil dimount!");
 });
@@ -129,12 +153,21 @@ onMounted(() => {
     <div class="card">
         <div class="card-header align-items-center d-flex">
             <h2 class="mb-0">List Transaction</h2>
-            <a :href="'/transaction/download'">
-                <button class="btn btn-sm btn-primary ms-auto">
-                    Download
-                    <i class="la la-download"></i>
-                </button>
-            </a>
+            <button
+                tabindex="3"
+                @click="handleDownload"
+                class="btn btn-lg btn-primary mb-5"
+                :disabled="loading"
+            >
+            <i class="la la-download"></i>
+            <span class="indicator-label" v-if="!loading">Download</span>
+
+                <span v-else>
+                    <span
+                        class="spinner-border spinner-border-sm align-middle ms-2"
+                    ></span>
+                </span>
+            </button>
         </div>
         <div class="card-body">
             <paginate

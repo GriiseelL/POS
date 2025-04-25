@@ -59,6 +59,8 @@
 </head>
 
 <body>
+
+
   <div class="header">
     <h1>TOKO MOBIL CALAEL</h1>
     <h2>Laproan Transaksi</h2>
@@ -103,13 +105,23 @@
       <td>{{ $item->quantity }}</td>
       <td class="text-right">Rp {{ number_format($item->product->price, 0, ',', '.') }}</td>
       <td class="text-right">Rp {{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}</td>
-      <td class="text-right">Rp {{ number_format($item->product->price *  0.12,0, ',', '.') }}</td>
+      <td class="text-right">Rp {{ number_format($item->product->price * 0.12, 0, ',', '.') }}</td>
       </tr>
     @endforeach
       </tbody>
     </table>
     </div>
   @endforeach
+  @php
+  $grandTotal = $transactions->sum('total');
+  @endphp
+
+  <table>
+    <tr>
+      <th style="text-align: left;">Total Seluruh Transaksi</th>
+      <th style="text-align: right;">Rp {{ number_format($grandTotal, 0, ',', '.') }}</th>
+    </tr>
+  </table>
 
   <div class="footer">
     <p>Dicetak pada: {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</p>
