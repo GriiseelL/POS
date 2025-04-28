@@ -126,69 +126,183 @@ const generateTransactionCode = () => {
 
 const payWithXendit = async (method = "Debit") => {
     try {
-        // for (let item of currentOrder.value) {
-        //     if (item.stock == null || item.quantity > item.stock) {
-        //         Swal.fire(
-        //             "Stok tidak cukup",
-        //             `Stok produk "${item.name}" hanya tersedia ${
-        //                 item.stock ?? 0
-        //             }`,
-        //             "warning"
-        //         );
-        //         return;
-        //     }
-        // }
-
         const code = generateTransactionCode();
 
-        const payload = currentOrder.value.map((item) => ({
-            transaction_code: code,
-            id_product: item.id,
-            quantity: item.quantity,
-            price: item.price,
-            metode_pembayaran: method,
-            sub_total: item.price * item.quantity,
-            total: subtotal.value + tax.value,
-        }));
+        // 1️⃣ Bikin tabel barang buat ditampilkan di swal
+        const itemsHtml = currentOrder.value.map(item => {
+            return `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>x${item.quantity}</td>
+                    <td>Rp${(item.price * item.quantity).toLocaleString()}</td>
+                </tr>
+            `;
+        }).join("");
 
-        const res = await api.post("/api/xendit/store", payload);
+        const htmlContent = `
+            <table style="width:100%;text-align:left;margin-bottom:10px;">
+                <thead>
+                    <tr>
+                        <th>Barang</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td><strong>Rp${(subtotal.value + tax.value).toLocaleString()}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <input id="sellerName" autocomplete="off" class="swal2-input" placeholder="Masukkan Nama Seller/Kasir" />
+        `;
 
-        window.location.href = res.data.invoice_url;
+        // 2️⃣ Sweetalert Konfirmasi + input seller
+        const result = await Swal.fire({
+            title: 'Konfirmasi Transaksi',
+            html: htmlContent,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Buat Invoice!',
+            cancelButtonText: 'Batal',
+            focusConfirm: false,
+            preConfirm: () => {
+                const sellerName = document.getElementById('sellerName').value;
+                if (!sellerName) {
+                    Swal.showValidationMessage('Nama seller wajib diisi!');
+                }
+                return { sellerName };
+            },
+            width: 600,
+        });
+
+        // 3️⃣ Kalau dikonfirmasi
+        if (result.isConfirmed) {
+            const sellerName = result.value.sellerName;
+
+            const payload = currentOrder.value.map((item) => ({
+                transaction_code: code,
+                id_product: item.id,
+                quantity: item.quantity,
+                price: item.price,
+                metode_pembayaran: method,
+                seller: sellerName, // ⬅️ Tambahin seller di sini
+                sub_total: item.price * item.quantity,
+                total: subtotal.value + tax.value,
+            }));
+
+            const res = await api.post("/api/xendit/store", payload);
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Invoice berhasil dibuat! Klik OK untuk lanjut ke pembayaran.',
+                confirmButtonText: 'OK'
+            });
+
+            window.location.href = res.data.invoice_url;
+        }
+
     } catch (error) {
+        console.error(error);
         Swal.fire("Gagal", "Tidak bisa membuat invoice", "error");
     }
 };
+
+
+
+// import Swal from "sweetalert2";
 
 const cash = async (method = "Cash") => {
     try {
         const code = generateTransactionCode();
 
-        const payload = currentOrder.value.map((item) => ({
-            transaction_code: code,
-            id_product: item.id,
-            quantity: item.quantity,
-            price: item.price,
-            metode_pembayaran: method,
-            sub_total: item.price * item.quantity,
-            total: subtotal.value + tax.value, // bisa disesuaikan
-        }));
+        // ✅ Tampilkan tabel barang
+        const itemsHtml = currentOrder.value.map(item => {
+            return `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>x${item.quantity}</td>
+                    <td>Rp${(item.price * item.quantity).toLocaleString()}</td>
+                </tr>
+            `;
+        }).join("");
 
-        const response = await api.post("/api/transaction/store", payload);
-        console.log("Transaksi berhasil disimpan:", response.data);
+        const htmlContent = `
+            <table style="width:100%;text-align:left;margin-bottom:10px;">
+                <thead>
+                    <tr>
+                        <th>Barang</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td><strong>Rp${(subtotal.value + tax.value).toLocaleString()}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <input id="sellerName" autocomplete="off" class="swal2-input" placeholder="Masukkan Nama Seller/Kasir" />
+        `;
 
-        currentOrder.value = [];
-
-        //SweetAlert sukses
-        Swal.fire({
-            icon: "success",
-            title: "Berhasil",
-            text: "Transaksi berhasil disimpan!",
-            confirmButtonText: "Oke",
+        const result = await Swal.fire({
+            title: 'Konfirmasi Transaksi',
+            html: htmlContent,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Simpan!',
+            cancelButtonText: 'Batal',
+            focusConfirm: false,
+            preConfirm: () => {
+                const sellerName = document.getElementById('sellerName').value;
+                if (!sellerName) {
+                    Swal.showValidationMessage('Nama seller wajib diisi!');
+                }
+                return { sellerName };
+            },
+            width: 600,
         });
-    } catch (error: any) {
+
+        if (result.isConfirmed) {
+            const sellerName = result.value.sellerName;
+
+            // 🔥 Perbaiki payload: langsung bentuk array of objek
+            const fullPayload = currentOrder.value.map((item) => ({
+                transaction_code: code,
+                id_product: item.id,
+                quantity: item.quantity,
+                price: item.price,
+                metode_pembayaran: method,
+                sub_total: item.price * item.quantity,
+                total: subtotal.value + tax.value,
+                seller: sellerName, // 🔥 Disisipkan di tiap item
+            }));
+
+            const response = await api.post("/api/transaction/store", fullPayload);
+            console.log("Transaksi berhasil disimpan:", response.data);
+
+            currentOrder.value = [];
+
+            Swal.fire({
+                icon: "success",
+                title: "Berhasil",
+                text: "Transaksi berhasil disimpan!",
+                confirmButtonText: "Oke",
+            });
+        }
+
+    } catch (error) {
         console.error("Gagal menyimpan transaksi:", error);
 
-        //SweetAlert error
         Swal.fire({
             icon: "error",
             title: "Gagal",
@@ -199,6 +313,7 @@ const cash = async (method = "Cash") => {
         });
     }
 };
+
 
 const formatRupiah = (num: number) =>
     new Intl.NumberFormat("id-ID", {
@@ -301,18 +416,22 @@ onMounted(() => {
                                 <span
                                     >{{ item.name }} x{{ item.quantity }}</span
                                 >
-                                <span class="fw-bold">{{ formatRupiah (item.price) }}</span>
+                                <span class="fw-bold">{{
+                                    formatRupiah(item.price)
+                                }}</span>
                             </div>
                         </div>
                         <div class="p-2 bg-light border rounded">
                             <p>
-                                Subtotal: <strong>{{ formatRupiah (subtotal) }}</strong>
+                                Subtotal:
+                                <strong>{{ formatRupiah(subtotal) }}</strong>
                             </p>
                             <p>
-                                Tax (12%): <strong>{{ formatRupiah (tax) }}</strong>
+                                Tax (12%):
+                                <strong>{{ formatRupiah(tax) }}</strong>
                             </p>
                             <p class="fw-bold text-success">
-                                Total: {{ formatRupiah (total) }}
+                                Total: {{ formatRupiah(total) }}
                             </p>
                         </div>
                         <h6 class="mt-3 fw-bold">Payment Status</h6>

@@ -71,6 +71,9 @@ const fetchDetail = async (id_transaksi: string) => {
                     <strong>Metode Pembayaran: ${
                         item.metode_pembayaran
                     }</strong><br/>
+                    <strong>Seller: ${
+                        item.seller
+                    }</strong><br/>
 
                 </div>
             `
@@ -95,7 +98,7 @@ const fetchDetail = async (id_transaksi: string) => {
         )}</strong><br/>
                 <strong>Total (termasuk pajak): ${formatRupiah(
                     totalTransaksi
-                )}</strong>
+                )}</strong><br>
             </div>
         `;
 

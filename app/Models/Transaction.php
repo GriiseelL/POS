@@ -16,6 +16,7 @@ class Transaction extends Model
         "price",
         "sub_total",
         "total",
+        "seller",
         "quantity",
     ];
 

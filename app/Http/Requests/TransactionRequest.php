@@ -24,6 +24,7 @@ class TransactionRequest extends FormRequest
         return [
             '*.id_product' => 'required|exists:products,id',
             '*.metode_pembayaran' => 'required',
+            '*.seller' => 'required',
             '*.total' => 'required|numeric|min:0',
         ];
     }

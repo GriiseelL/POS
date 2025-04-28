@@ -53,6 +53,7 @@ class TransactionController extends Controller
                 'total' => $firstItem['total'],
                 // 'status' => 'PENDING',
                 'metode_pembayaran' => $firstItem['metode_pembayaran'],
+                'seller' => $firstItem['seller'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -169,6 +170,7 @@ class TransactionController extends Controller
                 'transaction_code' => $transactionCode,
                 'total' => $firstItem['total'],
                 'metode_pembayaran' => $firstItem['metode_pembayaran'],
+                'seller' => $firstItem['seller'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -220,6 +222,7 @@ class TransactionController extends Controller
                 'transaction_product.*',
                 'products.name as product_name',
                 'transactions.metode_pembayaran as metode_pembayaran',
+                'transactions.seller as seller',
                 'products.price as product_price'
             )
             ->get();
