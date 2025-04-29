@@ -7,6 +7,7 @@ import axios from "@/libs/axios";
 import type { Category } from "@/types";
 import { useCategory } from "@/services/useCategory";
 import api from "@/core/api";
+import printJS from "print-js";
 
 const categories = ref([]);
 const fetchDataCategory = async () => {
@@ -129,15 +130,17 @@ const payWithXendit = async (method = "Debit") => {
         const code = generateTransactionCode();
 
         // 1️⃣ Bikin tabel barang buat ditampilkan di swal
-        const itemsHtml = currentOrder.value.map(item => {
-            return `
+        const itemsHtml = currentOrder.value
+            .map((item) => {
+                return `
                 <tr>
                     <td>${item.name}</td>
                     <td>x${item.quantity}</td>
                     <td>Rp${(item.price * item.quantity).toLocaleString()}</td>
                 </tr>
             `;
-        }).join("");
+            })
+            .join("");
 
         const htmlContent = `
             <table style="width:100%;text-align:left;margin-bottom:10px;">
@@ -154,7 +157,9 @@ const payWithXendit = async (method = "Debit") => {
                 <tfoot>
                     <tr>
                         <td colspan="2"><strong>Total</strong></td>
-                        <td><strong>Rp${(subtotal.value + tax.value).toLocaleString()}</strong></td>
+                        <td><strong>Rp${(
+                            subtotal.value + tax.value
+                        ).toLocaleString()}</strong></td>
                     </tr>
                 </tfoot>
             </table>
@@ -163,17 +168,17 @@ const payWithXendit = async (method = "Debit") => {
 
         // 2️⃣ Sweetalert Konfirmasi + input seller
         const result = await Swal.fire({
-            title: 'Konfirmasi Transaksi',
+            title: "Konfirmasi Transaksi",
             html: htmlContent,
-            icon: 'question',
+            icon: "question",
             showCancelButton: true,
-            confirmButtonText: 'Ya, Buat Invoice!',
-            cancelButtonText: 'Batal',
+            confirmButtonText: "Ya, Buat Invoice!",
+            cancelButtonText: "Batal",
             focusConfirm: false,
             preConfirm: () => {
-                const sellerName = document.getElementById('sellerName').value;
+                const sellerName = document.getElementById("sellerName").value;
                 if (!sellerName) {
-                    Swal.showValidationMessage('Nama seller wajib diisi!');
+                    Swal.showValidationMessage("Nama seller wajib diisi!");
                 }
                 return { sellerName };
             },
@@ -198,22 +203,19 @@ const payWithXendit = async (method = "Debit") => {
             const res = await api.post("/api/xendit/store", payload);
 
             await Swal.fire({
-                icon: 'success',
-                title: 'Berhasil',
-                text: 'Invoice berhasil dibuat! Klik OK untuk lanjut ke pembayaran.',
-                confirmButtonText: 'OK'
+                icon: "success",
+                title: "Berhasil",
+                text: "Invoice berhasil dibuat! Klik OK untuk lanjut ke pembayaran.",
+                confirmButtonText: "OK",
             });
 
             window.location.href = res.data.invoice_url;
         }
-
     } catch (error) {
         console.error(error);
         Swal.fire("Gagal", "Tidak bisa membuat invoice", "error");
     }
 };
-
-
 
 // import Swal from "sweetalert2";
 
@@ -222,15 +224,17 @@ const cash = async (method = "Cash") => {
         const code = generateTransactionCode();
 
         // ✅ Tampilkan tabel barang
-        const itemsHtml = currentOrder.value.map(item => {
-            return `
+        const itemsHtml = currentOrder.value
+            .map((item) => {
+                return `
                 <tr>
                     <td>${item.name}</td>
                     <td>x${item.quantity}</td>
                     <td>Rp${(item.price * item.quantity).toLocaleString()}</td>
                 </tr>
             `;
-        }).join("");
+            })
+            .join("");
 
         const htmlContent = `
             <table style="width:100%;text-align:left;margin-bottom:10px;">
@@ -247,7 +251,9 @@ const cash = async (method = "Cash") => {
                 <tfoot>
                     <tr>
                         <td colspan="2"><strong>Total</strong></td>
-                        <td><strong>Rp${(subtotal.value + tax.value).toLocaleString()}</strong></td>
+                        <td><strong>Rp${(
+                            subtotal.value + tax.value
+                        ).toLocaleString()}</strong></td>
                     </tr>
                 </tfoot>
             </table>
@@ -255,17 +261,17 @@ const cash = async (method = "Cash") => {
         `;
 
         const result = await Swal.fire({
-            title: 'Konfirmasi Transaksi',
+            title: "Konfirmasi Transaksi",
             html: htmlContent,
-            icon: 'question',
+            icon: "question",
             showCancelButton: true,
-            confirmButtonText: 'Ya, Simpan!',
-            cancelButtonText: 'Batal',
+            confirmButtonText: "Ya, Simpan!",
+            cancelButtonText: "Batal",
             focusConfirm: false,
             preConfirm: () => {
-                const sellerName = document.getElementById('sellerName').value;
+                const sellerName = document.getElementById("sellerName").value;
                 if (!sellerName) {
-                    Swal.showValidationMessage('Nama seller wajib diisi!');
+                    Swal.showValidationMessage("Nama seller wajib diisi!");
                 }
                 return { sellerName };
             },
@@ -287,10 +293,37 @@ const cash = async (method = "Cash") => {
                 seller: sellerName, // 🔥 Disisipkan di tiap item
             }));
 
-            const response = await api.post("/api/transaction/store", fullPayload);
+            const response = await api.post(
+                "/api/transaction/store",
+                fullPayload
+            );
             console.log("Transaksi berhasil disimpan:", response.data);
 
             currentOrder.value = [];
+
+            const receiptData = {
+                transaction_code: code,
+                seller: sellerName,
+                items: currentOrder.value,
+                subtotal: subtotal.value,
+                tax: tax.value,
+                total: total.value,
+            };
+
+            const receiptHtml = await api.post(
+                "/api/xendit/struk",
+                receiptData
+            );
+
+            printJS({
+                printable: receiptHtml.data,
+                type: "raw-html",
+                style: `
+        body { font-family: 'Courier New', monospace; font-size: 14px; }
+        table { width: 100%; }
+        td, th { padding: 4px; text-align: left; }
+    `,
+            });
 
             Swal.fire({
                 icon: "success",
@@ -299,7 +332,6 @@ const cash = async (method = "Cash") => {
                 confirmButtonText: "Oke",
             });
         }
-
     } catch (error) {
         console.error("Gagal menyimpan transaksi:", error);
 
@@ -313,7 +345,6 @@ const cash = async (method = "Cash") => {
         });
     }
 };
-
 
 const formatRupiah = (num: number) =>
     new Intl.NumberFormat("id-ID", {

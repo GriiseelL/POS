@@ -246,4 +246,12 @@ class TransactionController extends Controller
         $mpdf->WriteHTML($html);
         $mpdf->Output('laporan-penjualan.pdf', 'D'); // "D" = langsung download
     }
+
+    // Di Controller Laravel
+    public function generateReceipt(Request $request)
+    {
+        $data = $request->all(); // data struk
+        return view('struk', $data)->render(); // kirim HTML string
+    }
+
 }

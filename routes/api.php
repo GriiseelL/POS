@@ -62,8 +62,8 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
                 ->except(['index', 'store']);
             Route::get('item/{id}', [ProductController::class, 'first']);
         });
-        
-         Route::middleware('can:product-categories')->group(function () {
+
+        Route::middleware('can:product-categories')->group(function () {
             Route::get('category', [CategoryController::class, 'get'])->withoutMiddleware('can:product-categories');
             Route::post('category', [CategoryController::class, 'index']);
             Route::post('category/store', [CategoryController::class, 'store']);
@@ -80,8 +80,8 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
         Route::get('transaction/view/pdf', [TransactionController::class, 'view_pdf']);
         Route::apiResource('transaction', TransactionController::class)
             ->except(['index', 'store']);
-        });
     });
-    Route::post('xendit/invoice', [TransactionController::class, 'invoice']);
-    Route::post('xendit/store', [TransactionController::class, 'createXendit']);
-Route::get('xendit/struk', [TransactionController::class, 'getInvoiceById']);
+});
+Route::post('xendit/invoice', [TransactionController::class, 'invoice']);
+Route::post('xendit/store', [TransactionController::class, 'createXendit']);
+Route::post('xendit/struk', [TransactionController::class, 'generateReceipt']);
