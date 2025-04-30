@@ -29,7 +29,7 @@
 <body>
   <h3>Struk Pembayaran</h3>
   <p>Kode Transaksi: {{ $transaction_code }}</p>
-  <p>Kasir: {{ $seller }}</p>
+  {{-- <p>Kasir: {{ $seller }}</p> --}}
   <hr>
   <table>
     <thead>

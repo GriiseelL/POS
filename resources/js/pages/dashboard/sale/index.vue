@@ -200,7 +200,11 @@ const payWithXendit = async (method = "Debit") => {
                 total: subtotal.value + tax.value,
             }));
 
-            const res = await api.post("/api/xendit/store", payload);
+            const res = await api.post("/api/xendit/store", {
+                items: payload,
+                redirect_url: `${window.location.origin}/dashboard/transaction?code=${code}`,
+            });
+            window.location.href = res.data.invoice_url;
 
             await Swal.fire({
                 icon: "success",
@@ -299,8 +303,6 @@ const cash = async (method = "Cash") => {
             );
             console.log("Transaksi berhasil disimpan:", response.data);
 
-            currentOrder.value = [];
-
             const receiptData = {
                 transaction_code: code,
                 seller: sellerName,
@@ -324,6 +326,8 @@ const cash = async (method = "Cash") => {
         td, th { padding: 4px; text-align: left; }
     `,
             });
+
+            currentOrder.value = [];
 
             Swal.fire({
                 icon: "success",
