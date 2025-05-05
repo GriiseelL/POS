@@ -22,10 +22,19 @@ class TransactionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            '*.id_product' => 'required|exists:products,id',
-            '*.metode_pembayaran' => 'required',
-            '*.seller' => 'required',
-            '*.total' => 'required|numeric|min:0',
+            // 'id_product' => 'required|exists:products,id',
+            'metode_pembayaran' => 'required',
+            // 'quantity' => 'required',
+            // 'price' => 'required',
+
+
+            'items' => 'required|array|min:1',
+            'items.*.id_product' => 'required|integer|exists:products,id',
+            'items.*.price' => 'required|numeric|min:0',
+            // 'items.*.metode_pembayaran' => 'required',
+            'items.*.quantity' => 'required|integer|min:1',
+
+            // '*.total' => 'nullable|numeric|min:0',
         ];
     }
 }

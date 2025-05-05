@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import { h, ref, onMounted } from "vue";
 import type { Transaction } from "@/types";
 import axios from "axios";
+import printJS from "print-js";
 
 // STATE
 const showDetail = ref(false);
@@ -141,6 +142,40 @@ const handleDownload = () => {
 
 onMounted(() => {
     console.log("✅ Komponen TransactionDetail berhasil dimount!");
+});
+
+onMounted(async () => {
+    // console.log("✅ Komponen TransactionDetail berhasil dimount!");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    const shouldPrint = urlParams.get("print");
+
+    if (code && shouldPrint === "true") {
+        try {
+            const trx = await axios.get(`/transaction/${code}`);
+
+            const receiptRes = await axios.post('/xendit/struk', trx.data);
+
+            printJS({
+                printable: receiptRes.data,
+                type: "raw-html",
+                style: `
+                    body { font-family: 'Courier New', monospace; font-size: 14px; }
+                    table { width: 100%; }
+                    td, th { padding: 4px; text-align: left; }
+                `,
+            });
+
+            // Hapus parameter print dari URL setelah print
+            const cleanUrl = window.location.origin + window.location.pathname + `?code=${code}`;
+            window.history.replaceState({}, document.title, cleanUrl);
+
+        } catch (err) {
+            console.error("❌ Gagal cetak struk otomatis:", err);
+            Swal.fire("Gagal", "Tidak bisa cetak struk", "error");
+        }
+    }
 });
 </script>
 

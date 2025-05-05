@@ -54,8 +54,8 @@
   <hr>
   <p>Subtotal: Rp{{ number_format($subtotal, 0, ',', '.') }}</p>
   <p>Tax (12%): Rp{{ number_format($tax, 0, ',', '.') }}</p>
-  <p class="total">Total: Rp{{ number_format($total, 0, ',', '.') }}</p>
+  <p class="total">Total: Rp{{ number_format($subtotal+$tax, 0, ',', '.') }}</p>
   <p>Terima kasih telah berbelanja!</p>
 </body>
-
+  
 </html>

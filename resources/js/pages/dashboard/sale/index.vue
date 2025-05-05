@@ -261,7 +261,6 @@ const cash = async (method = "Cash") => {
                     </tr>
                 </tfoot>
             </table>
-            <input id="sellerName" autocomplete="off" class="swal2-input" placeholder="Masukkan Nama Seller/Kasir" />
         `;
 
         const result = await Swal.fire({
@@ -272,44 +271,31 @@ const cash = async (method = "Cash") => {
             confirmButtonText: "Ya, Simpan!",
             cancelButtonText: "Batal",
             focusConfirm: false,
-            preConfirm: () => {
-                const sellerName = document.getElementById("sellerName").value;
-                if (!sellerName) {
-                    Swal.showValidationMessage("Nama seller wajib diisi!");
-                }
-                return { sellerName };
-            },
             width: 600,
         });
 
         if (result.isConfirmed) {
-            const sellerName = result.value.sellerName;
 
             // 🔥 Perbaiki payload: langsung bentuk array of objek
-            const fullPayload = currentOrder.value.map((item) => ({
-                transaction_code: code,
-                id_product: item.id,
-                quantity: item.quantity,
-                price: item.price,
+            const payload = {
                 metode_pembayaran: method,
-                sub_total: item.price * item.quantity,
-                total: subtotal.value + tax.value,
-                seller: sellerName, // 🔥 Disisipkan di tiap item
-            }));
+                items: currentOrder.value.map((item) => ({
+                    id_product: item.id,
+                    price: item.price,
+                    quantity: item.quantity,
+                    subtotal: item.price * item.quantity,
+                })),
+            };
 
-            const response = await api.post(
-                "/api/transaction/store",
-                fullPayload
-            );
+            const response = await api.post("/api/transaction/store", payload);
             console.log("Transaksi berhasil disimpan:", response.data);
 
             const receiptData = {
                 transaction_code: code,
-                seller: sellerName,
                 items: currentOrder.value,
                 subtotal: subtotal.value,
                 tax: tax.value,
-                total: total.value,
+                // total: total.value,
             };
 
             const receiptHtml = await api.post(

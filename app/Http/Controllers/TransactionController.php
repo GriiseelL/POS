@@ -43,63 +43,68 @@ class TransactionController extends Controller
 
     public function createXendit(Request $request)
     {
+        // dd($request);
+        // return response()->json($request, 500);
+        // return;
         DB::beginTransaction();
+        
         try {
             $code = 'TRX-' . strtoupper(Str::random(8));
-            $firstItem = $request->all()[0];
-
-            $transactionId = DB::table('transactions')->insertGetId([
-                'transaction_code' => $code,
-                'total' => $firstItem['total'],
-                // 'status' => 'PENDING',
-                'metode_pembayaran' => $firstItem['metode_pembayaran'],
-                'seller' => $firstItem['seller'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            foreach ($request->all() as $item) {
-                $product = DB::table('products')->where('id', $item['id_product'])->first();
-
-                if (!$product || $product->stock < $item['quantity']) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'Stok tidak cukup untuk produk: ' . $product->name], 400);
-                }
-
-                DB::table('transaction_product')->insert([
-                    'id_transaksi' => $transactionId,
-                    'id_product' => $item['id_product'],
-                    'quantity' => $item['quantity'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                DB::table('products')
-                    ->where('id', $item['id_product'])
-                    ->decrement('stock', $item['quantity']);
-            }
+        //     $firstItem = $request;
 
 
-            Configuration::setXenditKey(env('XENDIT_SECRET'));
+        //     $transactionId = DB::table('transactions')->insertGetId([
+        //         'transaction_code' => $code,
+        //         'total' => $firstItem['total'],
+        //         // 'status' => 'PENDING',
+        //         'metode_pembayaran' => $firstItem['metode_pembayaran'],
+        //         'seller' => $firstItem['seller'],
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ]);
 
-            $invoiceRequest = new CreateInvoiceRequest([
-                'external_id' => $code,
-                'description' => 'Pembayaran TRX: ' . $code,
-                'amount' => $firstItem['total'],
-                'invoice_duration' => 3600, // 1 jam
-                'currency' => 'IDR',
-                'reminder_time' => 5,
-                'success_redirect_url' => 'http://127.0.0.1:8000/dashboard/transaction', // redirect setelah bayar
-            ]);
+        //     foreach ($request->all() as $item) {
+        //         $product = DB::table('products')->where('id', $item['id_product'])->first();
 
-            $invoice = (new InvoiceApi())->createInvoice($invoiceRequest);
+        //         if (!$product || $product->stock < $item['quantity']) {
+        //             DB::rollBack();
+        //             return response()->json(['message' => 'Stok tidak cukup untuk produk: ' . $product->name], 400);
+        //         }
 
-            DB::commit();
+        //         DB::table('transaction_product')->insert([
+        //             'id_transaksi' => $transactionId,
+        //             'id_product' => $item['id_product'],
+        //             'quantity' => $item['quantity'],
+        //             'created_at' => now(),
+        //             'updated_at' => now(),
+        //         ]);
 
-            return response()->json([
-                'message' => 'Invoice dibuat',
-                'invoice_url' => $invoice['invoice_url'],
-            ]);
+        //         DB::table('products')
+        //             ->where('id', $item['id_product'])
+        //             ->decrement('stock', $item['quantity']);
+        //     }
+
+
+        //     Configuration::setXenditKey(env('XENDIT_SECRET'));
+
+        //     $invoiceRequest = new CreateInvoiceRequest([
+        //         'external_id' => $code,
+        //         'description' => 'Pembayaran TRX: ' . $code,
+        //         'amount' => $firstItem['total'],
+        //         'invoice_duration' => 3600, // 1 jam
+        //         'currency' => 'IDR',
+        //         'reminder_time' => 5,
+        //         'success_redirect_url' => 'http://127.0.0.1:8000/dashboard/transaction', // redirect setelah bayar
+        //     ]);
+
+        //     $invoice = (new InvoiceApi())->createInvoice($invoiceRequest);
+
+        //     DB::commit();
+
+        //     return response()->json([
+        //         'message' => 'Invoice dibuat',
+        //         'invoice_url' => $invoice['invoice_url'],
+        //     ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
@@ -160,55 +165,118 @@ class TransactionController extends Controller
 
     public function store(TransactionRequest $request)
     {
+        // return response()->json($request, 500);
+
+
         DB::beginTransaction();
 
         try {
             $transactionCode = 'TRX-' . strtoupper(Str::random(8));
-            $firstItem = $request->all()[0];
+            $data = $request->validated();
+            $items = $data['items'];
 
-            $transactionId = DB::table('transactions')->insertGetId([
+            $subtotal = 0;
+            foreach ($items as $item) {
+                $subtotal += $item['price'] * $item['quantity'];
+            }
+
+            $taxrate=0.12;
+            $tax=$subtotal * $taxrate;
+            $total=$tax+$subtotal;
+            
+            
+            $transaction = Transaction::create([
                 'transaction_code' => $transactionCode,
-                'total' => $firstItem['total'],
-                'metode_pembayaran' => $firstItem['metode_pembayaran'],
-                'seller' => $firstItem['seller'],
-                'created_at' => now(),
-                'updated_at' => now(),
+                'total' => $total,
+                'metode_pembayaran' => $data['metode_pembayaran'],
+                // 'seller' => $data['seller'],   // kalau memang ada
             ]);
 
-            foreach ($request->all() as $item) {
+
+            foreach ($items as $item) {
                 // Cek stok dulu
-                $product = DB::table('products')->where('id', $item['id_product'])->first();
-                if (!$product || $product->stock < $item['quantity']) {
+                $prod = DB::table('products')->where('id', $item['id_product'])->first();
+                if (!$prod || $prod->stock < $item['quantity']) {
                     DB::rollBack();
-                    return response()->json([
-                        'message' => 'Stok produk habis'
-                    ], 400);
+                    return response()->json(['message' => 'Stok produk habis'], 400);
                 }
 
-                // Simpan detail transaksi
-                DB::table('transaction_product')->insert([
-                    'id_transaksi' => $transactionId,
+                $transaction_product = Transaction_product::create([
+                    'id_transaksi' => $transaction->id,
                     'id_product' => $item['id_product'],
                     'quantity' => $item['quantity'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-                // Kurangi stok
                 DB::table('products')->where('id', $item['id_product'])->update([
-                    'stock' => $product->stock - $item['quantity'],
+                    'stock' => $prod->stock - $item['quantity'],
                 ]);
-            }
 
+            }
             DB::commit();
-            return response()->json(['message' => 'Transaksi disimpan']);
+
+            return response()->json([
+                'success' => true,
+                'transaction' => $transaction,
+                $transaction_product,
+            ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'success' => false,
+                'message' => $e->getMessage(),
             ], 500);
         }
+
+
+
+        //     $firstItem = $request->all()[0];
+
+        //     $transactionId = DB::table('transactions')->insertGetId([
+        //         'transaction_code' => $transactionCode,
+        //         // 'total' => $firstItem['total'],
+        //         'metode_pembayaran' => $firstItem['metode_pembayaran'],
+        //         'seller' => $firstItem['seller'],
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ]);
+
+        //     foreach ($request->all() as $item) {
+        //         // Cek stok dulu
+        //         $product = DB::table('products')->where('id', $item['id_product'])->first();
+        //         if (!$product || $product->stock < $item['quantity']) {
+        //             DB::rollBack();
+        //             return response()->json([
+        //                 'message' => 'Stok produk habis'
+        //             ], 400);
+        //         }
+
+        //         // Simpan detail transaksi
+        //         DB::table('transaction_product')->insert([
+        //             'id_transaksi' => $transactionId,
+        //             'id_product' => $item['id_product'],
+        //             'quantity' => $item['quantity'],
+        //             'created_at' => now(),
+        //             'updated_at' => now(),
+        //         ]);
+
+        //         // Kurangi stok
+        //         DB::table('products')->where('id', $item['id_product'])->update([
+        //             'stock' => $product->stock - $item['quantity'],
+        //         ]);
+        //     }
+
+        //     DB::commit();
+        //     return response()->json(['message' => 'Transaksi disimpan']);
+
+        // } catch (\Exception $e) {
+        //     DB::rollBack();
+        //     return response()->json([
+        //         'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+        //     ], 500);
+        // }
 
     }
 
@@ -222,7 +290,7 @@ class TransactionController extends Controller
                 'transaction_product.*',
                 'products.name as product_name',
                 'transactions.metode_pembayaran as metode_pembayaran',
-                'transactions.seller as seller',
+                // 'transactions.seller as seller',
                 'products.price as product_price'
             )
             ->get();
@@ -232,7 +300,7 @@ class TransactionController extends Controller
         ]);
     }
 
-    
+
     public function download_pdf()
     {
         $mpdf = new \Mpdf\Mpdf();
@@ -253,5 +321,35 @@ class TransactionController extends Controller
         $data = $request->all(); // data struk
         return view('struk', $data)->render(); // kirim HTML string
     }
+
+    public function byCode($code)
+    {
+        $transactions = Transaction::with('product')
+            ->where('transaction_code', $code)
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+        }
+
+        $first = $transactions->first();
+
+        return response()->json([
+            'transaction_code' => $code,
+            'seller' => $first->seller,
+            'items' => $transactions->map(function ($item) {
+                return [
+                    'name' => $item->product->name,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'sub_total' => $item->sub_total,
+                ];
+            }),
+            'subtotal' => $first->total - $first->tax,
+            'tax' => $first->tax,
+            'total' => $first->total,
+        ]);
+    }
+
 
 }

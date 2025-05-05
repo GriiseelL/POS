@@ -12,13 +12,16 @@ class Transaction extends Model
     protected $fillable = [
         "name",
         "transaction_code",
-        "product",
+        // "product",
+        "metode_pembayaran",
         "price",
         "sub_total",
         "total",
         "seller",
         "quantity",
     ];
+
+    protected $table = 'transactions';
 
     public function product()
     {
