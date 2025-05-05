@@ -8,11 +8,15 @@ use App\Models\Transaction_product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
 use Xendit\Invoice\CreateInvoiceRequest;
-
+// use Xendit\Xendit;
+// use Xendit\Invoice;
+// use Xendit\Services\InvoiceService;
+// use Xendit\Invoice\Invoice;
 
 class TransactionController extends Controller
 {
@@ -40,78 +44,85 @@ class TransactionController extends Controller
             echo 'Full Error: ', json_encode($e->getFullError()), PHP_EOL;
         }
     }
+    // sesuaikan dengan SDK-mu
+    // use Illuminate\Support\Facades\Http;
 
-    public function createXendit(Request $request)
+    public function createXendit(TransactionRequest $request)
     {
-        // dd($request);
-        // return response()->json($request, 500);
-        // return;
         DB::beginTransaction();
-        
+
         try {
-            $code = 'TRX-' . strtoupper(Str::random(8));
-        //     $firstItem = $request;
+            // 1. Simpan transaksi seperti biasa
+            $transactionCode = 'TRX-' . strtoupper(Str::random(8));
+            $data = $request->validated();
+            $items = $data['items'];
+            $subtotal = collect($items)->sum(fn($i) => $i['price'] * $i['quantity']);
+            $tax = $subtotal * 0.12;
+            $total = $subtotal + $tax;
 
+            $transaction = Transaction::create([
+                'transaction_code' => $transactionCode,
+                'total' => $total,
+                'metode_pembayaran' => $data['metode_pembayaran'],
+            ]);
 
-        //     $transactionId = DB::table('transactions')->insertGetId([
-        //         'transaction_code' => $code,
-        //         'total' => $firstItem['total'],
-        //         // 'status' => 'PENDING',
-        //         'metode_pembayaran' => $firstItem['metode_pembayaran'],
-        //         'seller' => $firstItem['seller'],
-        //         'created_at' => now(),
-        //         'updated_at' => now(),
-        //     ]);
+            foreach ($items as $item) {
+                $prod = DB::table('products')->find($item['id_product']);
+                if (!$prod || $prod->stock < $item['quantity']) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Stok produk habis'], 400);
+                }
+                Transaction_product::create([
+                    'id_transaksi' => $transaction->id,
+                    'id_product' => $item['id_product'],
+                    'quantity' => $item['quantity'],
+                ]);
+                DB::table('products')->where('id', $item['id_product'])
+                    ->update(['stock' => $prod->stock - $item['quantity']]);
+            }
 
-        //     foreach ($request->all() as $item) {
-        //         $product = DB::table('products')->where('id', $item['id_product'])->first();
+            DB::commit();
 
-        //         if (!$product || $product->stock < $item['quantity']) {
-        //             DB::rollBack();
-        //             return response()->json(['message' => 'Stok tidak cukup untuk produk: ' . $product->name], 400);
-        //         }
+            // 2. Panggil Xendit API tanpa SDK
+            $response = Http::withBasicAuth(env('XENDIT_SECRET'), '')
+                ->post('https://api.xendit.co/v2/invoices', [
+                    'external_id' => $transactionCode,
+                    'amount' => $total,
+                    'description' => 'Pembayaran transaksi #' . $transactionCode,
+                    'invoice_duration' => 3600,
+                    'currency' => 'IDR',
+                    'success_redirect_url' => env('APP_URL')
+                        . '/dashboard/transaction?code='
+                        . $transactionCode
+                        . '&print=true',
+                ]);
 
-        //         DB::table('transaction_product')->insert([
-        //             'id_transaksi' => $transactionId,
-        //             'id_product' => $item['id_product'],
-        //             'quantity' => $item['quantity'],
-        //             'created_at' => now(),
-        //             'updated_at' => now(),
-        //         ]);
+            if ($response->failed()) {
+                // rollback kalau API Xendit error
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal membuat invoice di Xendit: ' . $response->body(),
+                ], 500);
+            }
 
-        //         DB::table('products')
-        //             ->where('id', $item['id_product'])
-        //             ->decrement('stock', $item['quantity']);
-        //     }
+            $invoice = $response->json(); // array hasil respons Xendit
 
+            // 3. Kembalikan URL pembayaran
+            return response()->json([
+                'success' => true,
+                'transaction' => $transaction,
+                // 'transaction_code' => $transactionCode,    // ← tambahkan ini
+                'payment_url' => $invoice['invoice_url'],
+            ], 201);
 
-        //     Configuration::setXenditKey(env('XENDIT_SECRET'));
-
-        //     $invoiceRequest = new CreateInvoiceRequest([
-        //         'external_id' => $code,
-        //         'description' => 'Pembayaran TRX: ' . $code,
-        //         'amount' => $firstItem['total'],
-        //         'invoice_duration' => 3600, // 1 jam
-        //         'currency' => 'IDR',
-        //         'reminder_time' => 5,
-        //         'success_redirect_url' => 'http://127.0.0.1:8000/dashboard/transaction', // redirect setelah bayar
-        //     ]);
-
-        //     $invoice = (new InvoiceApi())->createInvoice($invoiceRequest);
-
-        //     DB::commit();
-
-        //     return response()->json([
-        //         'message' => 'Invoice dibuat',
-        //         'invoice_url' => $invoice['invoice_url'],
-        //     ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
-
-
 
     public function get(Request $request)
     {
@@ -180,11 +191,11 @@ class TransactionController extends Controller
                 $subtotal += $item['price'] * $item['quantity'];
             }
 
-            $taxrate=0.12;
-            $tax=$subtotal * $taxrate;
-            $total=$tax+$subtotal;
-            
-            
+            $taxrate = 0.12;
+            $tax = $subtotal * $taxrate;
+            $total = $tax + $subtotal;
+
+
             $transaction = Transaction::create([
                 'transaction_code' => $transactionCode,
                 'total' => $total,
@@ -350,6 +361,6 @@ class TransactionController extends Controller
             'total' => $first->total,
         ]);
     }
-
-
 }
+    
+    

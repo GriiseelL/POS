@@ -128,96 +128,79 @@ const generateTransactionCode = () => {
 const payWithXendit = async (method = "Debit") => {
     try {
         const code = generateTransactionCode();
-
-        // 1️⃣ Bikin tabel barang buat ditampilkan di swal
+        // 1️⃣ Tabel ringkasan
         const itemsHtml = currentOrder.value
-            .map((item) => {
-                return `
-                <tr>
-                    <td>${item.name}</td>
-                    <td>x${item.quantity}</td>
-                    <td>Rp${(item.price * item.quantity).toLocaleString()}</td>
-                </tr>
-            `;
-            })
+            .map(
+                (item) => `
+        <tr>
+          <td>${item.name}</td>
+          <td>x${item.quantity}</td>
+          <td>Rp${(item.price * item.quantity).toLocaleString()}</td>
+        </tr>
+      `
+            )
             .join("");
 
-        const htmlContent = `
-            <table style="width:100%;text-align:left;margin-bottom:10px;">
-                <thead>
-                    <tr>
-                        <th>Barang</th>
-                        <th>Qty</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${itemsHtml}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="2"><strong>Total</strong></td>
-                        <td><strong>Rp${(
-                            subtotal.value + tax.value
-                        ).toLocaleString()}</strong></td>
-                    </tr>
-                </tfoot>
-            </table>
-            <input id="sellerName" autocomplete="off" class="swal2-input" placeholder="Masukkan Nama Seller/Kasir" />
-        `;
 
-        // 2️⃣ Sweetalert Konfirmasi + input seller
-        const result = await Swal.fire({
+        const htmlContent = `
+      <table style="width:100%;text-align:left;margin-bottom:10px;">
+        <thead>
+          <tr>
+            <th>Barang</th><th>Qty</th><th>Total</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2"><strong>Total</strong></td>
+            <td><strong>Rp${(
+                subtotal.value + tax.value
+            ).toLocaleString()}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+
+        // 2️⃣ Konfirmasi
+        const { isConfirmed } = await Swal.fire({
             title: "Konfirmasi Transaksi",
             html: htmlContent,
             icon: "question",
             showCancelButton: true,
             confirmButtonText: "Ya, Buat Invoice!",
             cancelButtonText: "Batal",
-            focusConfirm: false,
-            preConfirm: () => {
-                const sellerName = document.getElementById("sellerName").value;
-                if (!sellerName) {
-                    Swal.showValidationMessage("Nama seller wajib diisi!");
-                }
-                return { sellerName };
-            },
             width: 600,
         });
+        if (!isConfirmed) return;
 
-        // 3️⃣ Kalau dikonfirmasi
-        if (result.isConfirmed) {
-            const sellerName = result.value.sellerName;
-
-            const payload = currentOrder.value.map((item) => ({
-                transaction_code: code,
+        // 3️⃣ Kirim ke backend
+        const body = {
+            metode_pembayaran: method,
+            items: currentOrder.value.map((item) => ({
                 id_product: item.id,
-                quantity: item.quantity,
                 price: item.price,
-                metode_pembayaran: method,
-                seller: sellerName, // ⬅️ Tambahin seller di sini
-                sub_total: item.price * item.quantity,
-                total: subtotal.value + tax.value,
-            }));
+                quantity: item.quantity,
+            })),
+            // jika butuh redirect custom setelah bayar:
+            success_redirect_url: `${window.location.origin}/dashboard/transaction?code=${code}`, // sekarang code ada
+        };
 
-            const res = await api.post("/api/xendit/store", {
-                items: payload,
-                redirect_url: `${window.location.origin}/dashboard/transaction?code=${code}`,
-            });
-            window.location.href = res.data.invoice_url;
+        const res = await api.post("/api/xendit/store", body);
+        console.log("Xendit response:", res.data);
 
-            await Swal.fire({
-                icon: "success",
-                title: "Berhasil",
-                text: "Invoice berhasil dibuat! Klik OK untuk lanjut ke pembayaran.",
-                confirmButtonText: "OK",
-            });
-
-            window.location.href = res.data.invoice_url;
+        if (!res.data.success) {
+            throw new Error(res.data.message || "Failed to create invoice");
         }
+
+        // 4️⃣ Langsung redirect sekali ke URL Xendit
+        window.location.href = res.data.payment_url;
     } catch (error) {
         console.error(error);
-        Swal.fire("Gagal", "Tidak bisa membuat invoice", "error");
+        Swal.fire(
+            "Gagal",
+            error.message || "Tidak bisa membuat invoice",
+            "error"
+        );
     }
 };
 
@@ -275,7 +258,6 @@ const cash = async (method = "Cash") => {
         });
 
         if (result.isConfirmed) {
-
             // 🔥 Perbaiki payload: langsung bentuk array of objek
             const payload = {
                 metode_pembayaran: method,
