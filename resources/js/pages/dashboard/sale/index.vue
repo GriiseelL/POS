@@ -7,7 +7,7 @@ import axios from "@/libs/axios";
 import type { Category } from "@/types";
 import { useCategory } from "@/services/useCategory";
 import api from "@/core/api";
-import printJS from "print-js";
+import printJS from "print-js"
 
 const categories = ref([]);
 const fetchDataCategory = async () => {
@@ -180,6 +180,7 @@ const payWithXendit = async (method = "Debit") => {
                 id_product: item.id,
                 price: item.price,
                 quantity: item.quantity,
+                // subtotal: item.price * item.quantity,
             })),
             // jika butuh redirect custom setelah bayar:
             success_redirect_url: `${window.location.origin}/dashboard/transaction?code=${code}`, // sekarang code ada
@@ -274,21 +275,19 @@ const cash = async (method = "Cash") => {
 
             const receiptData = {
                 transaction_code: code,
-                items: currentOrder.value,
+                // items: currentOrder.value,
                 subtotal: subtotal.value,
                 tax: tax.value,
+                details: currentOrder.value // Pastikan data details ada
                 // total: total.value,
             };
 
-            const receiptHtml = await api.post(
-                "/api/xendit/struk",
-                receiptData
-            );
+            const { data: { data: htmlStr } } = await api.post('/api/xendit/struk', receiptData);
 
             printJS({
-                printable: receiptHtml.data,
-                type: "raw-html",
-                style: `
+                printable: htmlStr,
+                type: 'raw-html',
+            style: `
         body { font-family: 'Courier New', monospace; font-size: 14px; }
         table { width: 100%; }
         td, th { padding: 4px; text-align: left; }

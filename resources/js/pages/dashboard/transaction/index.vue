@@ -72,9 +72,7 @@ const fetchDetail = async (id_transaksi: string) => {
                     <strong>Metode Pembayaran: ${
                         item.metode_pembayaran
                     }</strong><br/>
-                    <strong>Seller: ${
-                        item.seller
-                    }</strong><br/>
+                    <strong>Seller: ${item.seller}</strong><br/>
 
                 </div>
             `
@@ -125,19 +123,18 @@ const fetchDetail = async (id_transaksi: string) => {
     }
 };
 
-
 const loading = ref(false);
 
 const handleDownload = () => {
-  loading.value = true;
+    loading.value = true;
 
-  // Simulasi download (ganti dengan aksi nyata)
-  window.location.href = "/transaction/download";
+    // Simulasi download (ganti dengan aksi nyata)
+    window.location.href = "/transaction/download";
 
-  // Optional: reset loading kalau perlu
-  setTimeout(() => {
-    loading.value = false;
-  }, 3000);
+    // Optional: reset loading kalau perlu
+    setTimeout(() => {
+        loading.value = false;
+    }, 3000);
 };
 
 onMounted(() => {
@@ -153,9 +150,10 @@ onMounted(async () => {
 
     if (code && shouldPrint === "true") {
         try {
-            const trx = await axios.get(`/transaction/${code}`);
+            const trx = await axios.get(`/detail-transaction/${code}`);
+            console.log("TRX:::",trx);
 
-            const receiptRes = await axios.post('/xendit/struk', trx.data);
+            const receiptRes = await axios.post("/xendit/struk", trx.data);
 
             printJS({
                 printable: receiptRes.data,
@@ -168,9 +166,11 @@ onMounted(async () => {
             });
 
             // Hapus parameter print dari URL setelah print
-            const cleanUrl = window.location.origin + window.location.pathname + `?code=${code}`;
+            const cleanUrl =
+                window.location.origin +
+                window.location.pathname +
+                `?code=${code}`;
             window.history.replaceState({}, document.title, cleanUrl);
-
         } catch (err) {
             console.error("❌ Gagal cetak struk otomatis:", err);
             Swal.fire("Gagal", "Tidak bisa cetak struk", "error");
@@ -197,8 +197,8 @@ onMounted(async () => {
                 class="btn btn-lg btn-primary mb-5"
                 :disabled="loading"
             >
-            <i class="la la-download"></i>
-            <span class="indicator-label" v-if="!loading">Download</span>
+                <i class="la la-download"></i>
+                <span class="indicator-label" v-if="!loading">Download</span>
 
                 <span v-else>
                     <span

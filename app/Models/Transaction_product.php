@@ -9,7 +9,7 @@ class Transaction_product extends Model
 {
     use HasFactory;
 
-    
+
     protected $fillable = [
         "id_product",
         "id_transaksi",
@@ -25,7 +25,9 @@ class Transaction_product extends Model
 
     public function product()
     {
-        return $this->belongsTo(Product::class, 'id_product');
+        return $this->hasOne(Product::class, 'id', 'id_product');
     }
+
+
 
 }

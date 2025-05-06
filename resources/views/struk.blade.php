@@ -41,12 +41,12 @@
       </tr>
     </thead>
     <tbody>
-      @foreach ($items as $item)
+      @foreach ($items['details'] as $item)
       <tr>
-      <td>{{ $item['name'] }}</td>
+      <td>{{ $item['product']['name'] }}</td>
       <td>{{ $item['quantity'] }}</td>
-      <td>Rp{{ number_format($item['price'], 0, ',', '.') }}</td>
-      <td>Rp{{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}</td>
+      <td>Rp{{ number_format($item['product']['price'], 0, ',', '.') }}</td>
+      <td>Rp{{ number_format($item['product']['price'] * $item['quantity'], 0, ',', '.') }}</td>
       </tr>
     @endforeach
     </tbody>
@@ -57,5 +57,5 @@
   <p class="total">Total: Rp{{ number_format($subtotal+$tax, 0, ',', '.') }}</p>
   <p>Terima kasih telah berbelanja!</p>
 </body>
-  
+
 </html>

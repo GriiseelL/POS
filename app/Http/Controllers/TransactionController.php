@@ -81,39 +81,45 @@ class TransactionController extends Controller
                     ->update(['stock' => $prod->stock - $item['quantity']]);
             }
 
+            // return response()->json('sukses', 500);
             DB::commit();
 
-            // 2. Panggil Xendit API tanpa SDK
-            $response = Http::withBasicAuth(env('XENDIT_SECRET'), '')
-                ->post('https://api.xendit.co/v2/invoices', [
-                    'external_id' => $transactionCode,
-                    'amount' => $total,
-                    'description' => 'Pembayaran transaksi #' . $transactionCode,
-                    'invoice_duration' => 3600,
-                    'currency' => 'IDR',
-                    'success_redirect_url' => env('APP_URL')
-                        . '/dashboard/transaction?code='
-                        . $transactionCode
-                        . '&print=true',
-                ]);
+            Configuration::setXenditKey(env('XENDIT_SECRET'));
 
-            if ($response->failed()) {
-                // rollback kalau API Xendit error
+            $apiInstance = new InvoiceApi();
+            $invoice = new CreateInvoiceRequest([
+                'external_id' => $transactionCode, // dari generateTransactionCode()
+                'description' => 'desc',
+                'amount' => $total,
+                'invoice_duration' => 172800,
+                'currency' => 'IDR',
+                'reminder_time' => 1,
+                'success_redirect_url' => env('APP_URL')
+                    . '/dashboard/transaction?code='
+                    . $transactionCode
+                    . '&print=true',
+            ]); // \Xendit\Invoice\CreateInvoiceRequest
+            // $for_user_id = "62efe4c33e45694d63f585f0"; // string | Business ID of the sub-account merchant (XP feature)
+
+            // return response()->json('sukses', 500);
+
+            try {
+                $result = $apiInstance->createInvoice($invoice);
+                // return response()->json($result, 500);
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal membuat invoice di Xendit: ' . $response->body(),
-                ], 500);
+                    'success' => true,
+                    'transaction' => $transaction,
+                    // 'transaction_code' => $transactionCode,    // ← tambahkan ini
+                    'payment_url' => $result['invoice_url'],
+                ], 201);
+            } catch (\Xendit\XenditSdkException $e) {
+                echo 'Exception when calling InvoiceApi->createInvoice: ', $e->getMessage(), PHP_EOL;
+                echo 'Full Error: ', json_encode($e->getFullError()), PHP_EOL;
             }
 
-            $invoice = $response->json(); // array hasil respons Xendit
 
             // 3. Kembalikan URL pembayaran
-            return response()->json([
-                'success' => true,
-                'transaction' => $transaction,
-                // 'transaction_code' => $transactionCode,    // ← tambahkan ini
-                'payment_url' => $invoice['invoice_url'],
-            ], 201);
+
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -327,40 +333,94 @@ class TransactionController extends Controller
     }
 
     // Di Controller Laravel
-    public function generateReceipt(Request $request)
-    {
-        $data = $request->all(); // data struk
-        return view('struk', $data)->render(); // kirim HTML string
-    }
+//     public function generateReceipt(Request $request)
+//     {
+//         // return response()->json('sukses', 500);
+//
+//         $data = $request->all(); // data struk
+//
+//         $details = $data['details'] ?? []; // Jika tidak ada details, beri array kosong
+//         $transaction_code = $data['transaction_code  '] ?? null;
+//         $items = $data['items'] ?? [];
+//
+//         $receiptHtml = view('struk', compact('data', 'details', 'transaction_code', 'items'))->render();
+//
+//         return response()->json(['data'->$receiptHtml]);// kirim HTML string
+//     }
+
+        public function generateReceipt(Request $request)
+        {
+            // Ambil langsung dari request
+            $transaction_code = $request->input('transaction_code');
+            $rawItems         = $request->input('items', []);  // array item: tiap elemen berisi ['product' => […], 'quantity' => …]
+            $subtotal         = $request->input('subtotal', 0);
+            $tax              = $request->input('tax', 0);
+            $total            = $request->input('total', $subtotal + $tax);
+
+            // Bungkus ke dalam key 'details'
+            $items = [
+                   'details' => array_map(function($i) {
+                       return [
+                           'product'  => [
+                               'name'  => $i['name'],
+                               'price' => $i['price'],
+                           ],
+                           'quantity' => $i['quantity'],
+                       ];
+                   }, $rawItems),
+               ];
+
+            // Kirim ke view
+            $receiptHtml = view('struk', compact(
+                'transaction_code',
+                'items',
+                'subtotal',
+                'tax',
+                'total'
+            ))->render();
+
+            return response()->json(['data' => $receiptHtml]);
+        }
+
+
+
 
     public function byCode($code)
     {
-        $transactions = Transaction::with('product')
-            ->where('transaction_code', $code)
-            ->get();
 
-        if ($transactions->isEmpty()) {
+
+        // return response()->json('suks/es', 500);
+
+
+        $transactions = Transaction::with('details')
+            ->where('transaction_code', $code)
+            ->first();
+
+        if (!$transactions) {
             return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
         }
 
-        $first = $transactions->first();
+
+        // $first = $transactions->first();
+        $details = $transactions->details;
+        $subtotal = 0;
+
+        foreach ($details as $item) {
+        $subtotal += $item->product->price * $item->quantity;
+        }
+
+       $taxRate = 0.12;
+       $taxAmount = $subtotal * $taxRate;
+       $total = $subtotal + $taxAmount;
+
 
         return response()->json([
             'transaction_code' => $code,
-            'seller' => $first->seller,
-            'items' => $transactions->map(function ($item) {
-                return [
-                    'name' => $item->product->name,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'sub_total' => $item->sub_total,
-                ];
-            }),
-            'subtotal' => $first->total - $first->tax,
-            'tax' => $first->tax,
-            'total' => $first->total,
+            // 'seller' => $first->seller,
+            'items' => $transactions,
+            'tax' => round($taxAmount),
+            'subtotal' => round($subtotal),
+            'total' => round($total),
         ]);
     }
 }
-    
-    
