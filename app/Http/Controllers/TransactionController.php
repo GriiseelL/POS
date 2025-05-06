@@ -402,7 +402,7 @@ class TransactionController extends Controller
 
 
         // $first = $transactions->first();
-        $details = $transactions->detail;
+        $details = $transactions->details;
         $subtotal = 0;
 
         foreach ($details as $item) {
