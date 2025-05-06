@@ -85,4 +85,5 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 Route::post('xendit/invoice', [TransactionController::class, 'invoice']);
 Route::post('xendit/store', [TransactionController::class, 'createXendit']);
 Route::post('xendit/struk', [TransactionController::class, 'generateReceipt']);
+Route::post('xendit/struk/cash', [TransactionController::class, 'generateReceiptCash']);
 Route::get('/detail-transaction/{code}', [TransactionController::class, 'byCode']);

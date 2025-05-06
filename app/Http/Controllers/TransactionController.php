@@ -333,22 +333,13 @@ class TransactionController extends Controller
     }
 
     // Di Controller Laravel
-//     public function generateReceipt(Request $request)
-//     {
-//         // return response()->json('sukses', 500);
-//
-//         $data = $request->all(); // data struk
-//
-//         $details = $data['details'] ?? []; // Jika tidak ada details, beri array kosong
-//         $transaction_code = $data['transaction_code  '] ?? null;
-//         $items = $data['items'] ?? [];
-//
-//         $receiptHtml = view('struk', compact('data', 'details', 'transaction_code', 'items'))->render();
-//
-//         return response()->json(['data'->$receiptHtml]);// kirim HTML string
-//     }
+    public function generateReceipt(Request $request)
+    {
+        $data = $request->all(); // data struk
+        return view('struk', $data)->render(); // kirim HTML string
+    }
 
-        public function generateReceipt(Request $request)
+            public function generateReceiptCash(Request $request)
         {
             // Ambil langsung dari request
             $transaction_code = $request->input('transaction_code');

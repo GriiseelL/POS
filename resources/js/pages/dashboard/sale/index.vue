@@ -282,7 +282,7 @@ const cash = async (method = "Cash") => {
                 // total: total.value,
             };
 
-            const { data: { data: htmlStr } } = await api.post('/api/xendit/struk', receiptData);
+            const { data: { data: htmlStr } } = await api.post('/api/xendit/struk/cash', receiptData);
 
             printJS({
                 printable: htmlStr,
