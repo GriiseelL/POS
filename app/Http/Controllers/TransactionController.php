@@ -13,10 +13,7 @@ use Illuminate\Support\Str;
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
 use Xendit\Invoice\CreateInvoiceRequest;
-// use Xendit\Xendit;
-// use Xendit\Invoice;
-// use Xendit\Services\InvoiceService;
-// use Xendit\Invoice\Invoice;
+
 
 class TransactionController extends Controller
 {
@@ -339,39 +336,39 @@ class TransactionController extends Controller
         return view('struk', $data)->render(); // kirim HTML string
     }
 
-            public function generateReceiptCash(Request $request)
-        {
-            // Ambil langsung dari request
-            $transaction_code = $request->input('transaction_code');
-            $rawItems         = $request->input('items', []);  // array item: tiap elemen berisi ['product' => […], 'quantity' => …]
-            $subtotal         = $request->input('subtotal', 0);
-            $tax              = $request->input('tax', 0);
-            $total            = $request->input('total', $subtotal + $tax);
+    public function generateReceiptCash(Request $request)
+    {
+        // Ambil langsung dari request
+        $transaction_code = $request->input('transaction_code');
+        $rawItems = $request->input('items', []);  // array item: tiap elemen berisi ['product' => […], 'quantity' => …]
+        $subtotal = $request->input('subtotal', 0);
+        $tax = $request->input('tax', 0);
+        $total = $request->input('total', $subtotal + $tax);
 
-            // Bungkus ke dalam key 'details'
-            $items = [
-                   'details' => array_map(function($i) {
-                       return [
-                           'product'  => [
-                               'name'  => $i['name'],
-                               'price' => $i['price'],
-                           ],
-                           'quantity' => $i['quantity'],
-                       ];
-                   }, $rawItems),
-               ];
+        // Bungkus ke dalam key 'details'
+        $items = [
+            'details' => array_map(function ($i) {
+                return [
+                    'product' => [
+                        'name' => $i['name'],
+                        'price' => $i['price'],
+                    ],
+                    'quantity' => $i['quantity'],
+                ];
+            }, $rawItems),
+        ];
 
-            // Kirim ke view
-            $receiptHtml = view('struk', compact(
-                'transaction_code',
-                'items',
-                'subtotal',
-                'tax',
-                'total'
-            ))->render();
+        // Kirim ke view
+        $receiptHtml = view('struk', compact(
+            'transaction_code',
+            'items',
+            'subtotal',
+            'tax',
+            'total'
+        ))->render();
 
-            return response()->json(['data' => $receiptHtml]);
-        }
+        return response()->json(['data' => $receiptHtml]);
+    }
 
 
 
@@ -397,12 +394,12 @@ class TransactionController extends Controller
         $subtotal = 0;
 
         foreach ($details as $item) {
-        $subtotal += $item->product->price * $item->quantity;
+            $subtotal += $item->product->price * $item->quantity;
         }
 
-       $taxRate = 0.12;
-       $taxAmount = $subtotal * $taxRate;
-       $total = $subtotal + $taxAmount;
+        $taxRate = 0.12;
+        $taxAmount = $subtotal * $taxRate;
+        $total = $subtotal + $taxAmount;
 
 
         return response()->json([

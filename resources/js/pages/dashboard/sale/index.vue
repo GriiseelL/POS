@@ -275,7 +275,7 @@ const cash = async (method = "Cash") => {
 
             const receiptData = {
                 transaction_code: code,
-                // items: currentOrder.value,
+                items: currentOrder.value,
                 subtotal: subtotal.value,
                 tax: tax.value,
                 details: currentOrder.value // Pastikan data details ada
@@ -442,9 +442,6 @@ onMounted(() => {
                             @click="cash(Cash)"
                         >
                             💵 Cash
-                        </button>
-                        <button class="btn btn-outline-secondary w-100 my-1">
-                            💳 Card
                         </button>
                         <button
                             class="btn btn-outline-secondary w-100 my-1"
