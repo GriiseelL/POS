@@ -7,6 +7,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\chartController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -87,3 +88,5 @@ Route::post('xendit/store', [TransactionController::class, 'createXendit']);
 Route::post('xendit/struk', [TransactionController::class, 'generateReceipt']);
 Route::post('xendit/struk/cash', [TransactionController::class, 'generateReceiptCash']);
 Route::get('/detail-transaction/{code}', [TransactionController::class, 'byCode']);
+
+Route::get('chart-js', [chartController::class, 'getData']);
