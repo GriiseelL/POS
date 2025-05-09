@@ -447,7 +447,7 @@ onMounted(() => {
                             class="btn btn-outline-secondary w-100 my-1"
                             @click="payWithXendit(Debit)"
                         >
-                            📱 E-Wallet
+                            📱 Debit
                         </button>
                     </div>
                 </div>

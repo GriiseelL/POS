@@ -62,7 +62,7 @@
 
 
   <div class="header">
-    <h1>TOKO MOBIL CALAEL</h1>
+    <h1>TOKO MOBIL PNG</h1>
     <h2>Laproan Transaksi</h2>
     <small>{{ \Carbon\Carbon::now()->format('d M Y H:i') }}</small>
   </div>

@@ -72,7 +72,7 @@ const fetchDetail = async (id_transaksi: string) => {
                     <strong>Metode Pembayaran: ${
                         item.metode_pembayaran
                     }</strong><br/>
-                    <strong>Seller: ${item.seller}</strong><br/>
+<!--                    <strong>Seller: ${item.seller}</strong><br/>-->
 
                 </div>
             `
