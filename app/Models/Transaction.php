@@ -23,10 +23,11 @@ class Transaction extends Model
 
     protected $table = 'transactions';
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class, 'id');
-    }
+   public function product()
+   {
+       return $this->belongsToMany(Product::class, 'transaction_product', 'id_transaksi', 'id_product');
+   }
+
     public function details()
     {
         return $this->hasMany(Transaction_product::class, 'id_transaksi', 'id')->with('product');

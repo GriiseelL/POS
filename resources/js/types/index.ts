@@ -4,3 +4,4 @@ export type { Setting } from "./setting";
 export type { Product } from "./Product";
 export type { Category } from "./Category";
 export type { Transaction } from "./Transaction";
+export type { Riwayat } from "./Riwayat";

@@ -71,7 +71,16 @@ const routes: Array<RouteRecordRaw> = [
                     breadcrumbs: ["Website", "Product", "Categories"],
                 },
             },
-
+            {
+                path: "/dashboard/restock",
+                name: "dashboard.restock",
+                component: () =>
+                    import("@/pages/dashboard/restock/index.vue"),
+                meta: {
+                    pageTitle: "Website Restock",
+                    breadcrumbs: ["Website", "Transactions"],
+                },
+            },
             {
                 path: "/dashboard/transaction",
                 name: "dashboard.transaction",

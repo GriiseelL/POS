@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\chartController;
+use App\Http\Controllers\restockController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -81,6 +82,12 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
         Route::get('transaction/view/pdf', [TransactionController::class, 'view_pdf']);
         Route::apiResource('transaction', TransactionController::class)
             ->except(['index', 'store']);
+    });
+
+    Route::middleware('can:restock')->group(function () {
+        Route::get('restock', [restockController::class, 'get'])->withoutMiddleware('can:restock');
+        Route::post('restock', [restockController::class, 'index']);
+        Route::post('riwayat_stock', [restockController::class, 'store']);
     });
 });
 Route::post('xendit/invoice', [TransactionController::class, 'invoice']);

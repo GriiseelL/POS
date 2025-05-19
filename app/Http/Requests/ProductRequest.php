@@ -28,5 +28,9 @@ class ProductRequest extends FormRequest
             "stock"=> "required",
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
+
+        if ($this->isMethod('post')) {
+                $rules['stock'] = 'required|integer|min:0';
+            }
     }
 }

@@ -30,7 +30,10 @@ const fetchProducts = async (id_category) => {
         });
 
         console.log("Data produk yang diterima:", response.data); // Debugging
-        products.value = response.data.data;
+
+        const availableProducts = response.data.data.filter(product => product.stock > 0);
+
+        products.value = availableProducts;
     } catch (error) {
         console.error("Gagal mengambil data produk", error);
     }
@@ -359,6 +362,7 @@ onMounted(() => {
                             <h5 class="fw-bold">Product List</h5>
                         </div>
                         <div class="row g-2">
+                            <template v-if="products.length > 0">
                             <div
                                 class="col-5 col-md-5"
                                 v-for="product in products"
@@ -393,6 +397,12 @@ onMounted(() => {
                                     </button>
                                 </div>
                             </div>
+                            </template>
+                            <template v-else>
+                                <div class="col-12 text-center text-muted py-4">
+                                    <h5>Semua produk dalam kategori ini habis.</h5>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>

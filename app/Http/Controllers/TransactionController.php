@@ -74,8 +74,8 @@ class TransactionController extends Controller
                     'id_product' => $item['id_product'],
                     'quantity' => $item['quantity'],
                 ]);
-                DB::table('products')->where('id', $item['id_product'])
-                    ->update(['stock' => $prod->stock - $item['quantity']]);
+//                 DB::table('products')->where('id', $item['id_product'])
+//                     ->update(['stock' => $prod->stock - $item['quantity']]);
             }
 
             // return response()->json('sukses', 500);
@@ -223,9 +223,17 @@ class TransactionController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                DB::table('products')->where('id', $item['id_product'])->update([
-                    'stock' => $prod->stock - $item['quantity'],
-                ]);
+//                  DB::table('riwayat_stock')->insert([
+//                         'id_product' => $item['id_product'],
+//                         'quantity' => $item['quantity'],
+//                         'tipe' => 'keluar',
+//                         'created_at' => now(),
+//                         'updated_at' => now(),
+//                     ]);
+
+//                 DB::table('products')->where('id', $item['id_product'])->update([
+//                     'stock' => $prod->stock - $item['quantity'],
+//                 ]);
 
             }
             DB::commit();

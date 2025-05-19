@@ -15,7 +15,7 @@ class ProductController extends Controller
     public function get(Request $request)
     {
 
-        $query = Product::with('category');
+    $query = Product::with('category');
 
         if ($request->has('id_category')) {
             $query->where('id_category', $request->id_category);
@@ -93,6 +93,9 @@ class ProductController extends Controller
     {
         $validatedData = $request->validated();
 
+
+         unset($validatedData['stock']);
+
         if ($request->hasFile('photo')) {
             // Hapus foto lama kalau ada
             if ($product->photo && \Storage::exists('public/' . $product->photo)) {
@@ -111,7 +114,7 @@ class ProductController extends Controller
             'name' => $validatedData['name'],
             'id_category' => $validatedData['id_category'],
             'price' => $validatedData['price'],
-            'stock' => $validatedData['stock'],
+//             'stock' => $validatedData['stock'],
             'photo' => $validatedData['photo'],
         ]);
 
