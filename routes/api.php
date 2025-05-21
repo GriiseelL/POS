@@ -77,7 +77,7 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::middleware('can:transaction')->group(function () {
         Route::get('transaction', [TransactionController::class, 'get'])->withoutMiddleware('can:transaction');
         Route::post('transaction', [TransactionController::class, 'index']);
-        Route::post('transaction/store', [TransactionController::class, 'store']);
+        Route::post('transaction/store', [TransactionController::class, 'store'])->middleware('api');
         Route::get('transaction/detail/{id_transaksi}', [TransactionController::class, 'show']);
         Route::get('transaction/view/pdf', [TransactionController::class, 'view_pdf']);
         Route::apiResource('transaction', TransactionController::class)

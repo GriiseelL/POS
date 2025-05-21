@@ -30,32 +30,6 @@ const columns = [
     column.accessor("created_at", {
         header: "Tanggal",
     }),
-    column.accessor("uuid", {
-        header: "Aksi",
-        cell: (cell) =>
-            h("div", { class: "d-flex gap-2" }, [
-                h(
-                    "button",
-                    {
-                        class: "btn btn-sm btn-icon btn-info",
-                        onClick: () => {
-                            selected.value = cell.getValue();
-                            openForm.value = true;
-                        },
-                    },
-                    h("i", { class: "la la-pencil fs-2" })
-                ),
-                h(
-                    "button",
-                    {
-                        class: "btn btn-sm btn-icon btn-danger",
-                        onClick: () =>
-                            deleteUser(`/master/users/${cell.getValue()}`),
-                    },
-                    h("i", { class: "la la-trash fs-2" })
-                ),
-            ]),
-    }),
 ];
 
 const refresh = () => paginateRef.value.refetch();

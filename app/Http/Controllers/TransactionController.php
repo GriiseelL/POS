@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
 use Xendit\Invoice\CreateInvoiceRequest;
+use Illuminate\Support\Facades\Auth;
+
 
 
 class TransactionController extends Controller
@@ -61,6 +63,7 @@ class TransactionController extends Controller
                 'transaction_code' => $transactionCode,
                 'total' => $total,
                 'metode_pembayaran' => $data['metode_pembayaran'],
+                'seller' => Auth::user()->name,
             ]);
 
             foreach ($items as $item) {
@@ -119,12 +122,14 @@ class TransactionController extends Controller
 
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+              return response()->json([
+                  'success' => false,
+                  'message' => $e->getMessage(),
+                  'file' => $e->getFile(),
+                  'line' => $e->getLine(),
+              ], 500);
+          }
+
     }
 
     public function get(Request $request)
@@ -203,6 +208,7 @@ class TransactionController extends Controller
                 'transaction_code' => $transactionCode,
                 'total' => $total,
                 'metode_pembayaran' => $data['metode_pembayaran'],
+                'seller' => Auth::user()->name,
                 // 'seller' => $data['seller'],   // kalau memang ada
             ]);
 
@@ -223,13 +229,13 @@ class TransactionController extends Controller
                     'updated_at' => now(),
                 ]);
 
-//                  DB::table('riwayat_stock')->insert([
-//                         'id_product' => $item['id_product'],
-//                         'quantity' => $item['quantity'],
-//                         'tipe' => 'keluar',
-//                         'created_at' => now(),
-//                         'updated_at' => now(),
-//                     ]);
+                 DB::table('riwayat_stock')->insert([
+                        'id_product' => $item['id_product'],
+                        'quantity' => $item['quantity'],
+                        'tipe' => 'keluar',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
 
 //                 DB::table('products')->where('id', $item['id_product'])->update([
 //                     'stock' => $prod->stock - $item['quantity'],
@@ -352,6 +358,8 @@ class TransactionController extends Controller
         $subtotal = $request->input('subtotal', 0);
         $tax = $request->input('tax', 0);
         $total = $request->input('total', $subtotal + $tax);
+        $seller = $request->input('seller', Auth::user()->name ?? 'Guest');
+
 
         // Bungkus ke dalam key 'details'
         $items = [
@@ -372,7 +380,8 @@ class TransactionController extends Controller
             'items',
             'subtotal',
             'tax',
-            'total'
+            'total',
+            'seller'
         ))->render();
 
         return response()->json(['data' => $receiptHtml]);
@@ -412,7 +421,7 @@ class TransactionController extends Controller
 
         return response()->json([
             'transaction_code' => $code,
-            // 'seller' => $first->seller,
+            'seller' => $transactions->seller,
             'items' => $transactions,
             'tax' => round($taxAmount),
             'subtotal' => round($subtotal),

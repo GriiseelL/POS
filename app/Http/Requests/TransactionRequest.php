@@ -11,8 +11,17 @@ class TransactionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user() && auth()->user()->can('transaction');
+        return true;
     }
+
+   protected function prepareForValidation()
+   {
+       $this->merge([
+           'seller' => auth()->user()->name ?? 'default_seller',
+       ]);
+   }
+
+
 
     /**
      * Get the validation rules that apply to the request.
