@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost:3306
--- Generation Time: Apr 21, 2025 at 11:24 AM
+-- Host: 127.0.0.1
+-- Generation Time: Jun 30, 2025 at 09:21 AM
 -- Server version: 8.0.30
--- PHP Version: 8.3.16
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -113,7 +113,8 @@ CREATE TABLE `model_has_roles` (
 --
 
 INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
-(1, 'App\\Models\\User', '1');
+(1, 'App\\Models\\User', '1'),
+(2, 'App\\Models\\User', '3');
 
 -- --------------------------------------------------------
 
@@ -156,7 +157,8 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 (9, 'product-categories', 'api', '2025-03-25 01:25:24', '2025-03-25 01:25:34'),
 (10, 'product-items', 'api', '2025-03-25 01:32:45', '2025-03-25 01:32:45'),
 (11, 'transaction', 'api', '2025-03-26 03:05:48', '2025-03-26 03:05:48'),
-(12, 'sale', 'api', '2025-03-28 02:07:01', '2025-03-28 02:07:01');
+(12, 'sale', 'api', '2025-03-28 02:07:01', '2025-03-28 02:07:01'),
+(13, 'restock', 'api', '2025-05-16 01:47:39', '2025-05-16 01:47:39');
 
 -- --------------------------------------------------------
 
@@ -199,10 +201,55 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `name`, `id_category`, `price`, `stock`, `photo`, `created_at`, `updated_at`) VALUES
-(22, 'Rolls-Royce La Rose Noire Droptail', 5, 2000000000, 2, 'photo/rehCgjI9G8agOQMkoOSppb2hdVK4YooSI4TejBMv.jpg', '2025-04-08 20:49:27', '2025-04-20 19:48:30'),
-(23, 'Porsche Taycan', 1, 5000000000, 5, 'photo/sMAFTSgm1bJIT3LwBmJkFL2fvsR48MJTx3YpYw1H.jpg', '2025-04-09 20:53:36', '2025-04-16 19:59:13'),
-(24, 'Toyota Hilux Single Cab', 6, 500000000, 10, 'photo/Qb3IPIfcDBaPoiO1KO7Fq87N4Yo7aknXo7kEA9MR.jpg', '2025-04-14 23:24:22', '2025-04-20 19:48:43'),
-(26, 'Honda Brio', 8, 258000000, 0, 'photo/sEwkKWxU7Ddxz72y889ERs6qmMEsxFqpHgYI0BoD.jpg', '2025-04-20 19:47:56', '2025-04-20 19:47:56');
+(22, 'Rolls-Royce La Rose Noire Droptail', 5, 450000000000, 2, 'photo/gwVk57H41a5j9xLNKJf9jHs6RbAfZGTtK9JchBo7.jpg', '2025-04-08 20:49:27', '2025-05-19 03:43:18'),
+(23, 'Porsche Taycan', 1, 5000000000, 0, 'photo/HF7l1MEAKw54eeP6MENP892kzY5dXuCZg032fS6O.jpg', '2025-04-09 20:53:36', '2025-05-19 03:42:40'),
+(24, 'Toyota Hilux Single Cab', 6, 500000000, 0, 'photo/TTqyNbvEokA2dgwZFIlqKI7ELLAuNthVGPxe1lYh.jpg', '2025-04-14 23:24:22', '2025-05-19 11:39:37'),
+(26, 'Honda Brio', 8, 288000000, 1, 'photo/XN8KmUyedl8jmz97iXJ8zMoj0KNZDjVYhyXaTZOb.jpg', '2025-04-20 19:47:56', '2025-05-15 03:47:49'),
+(28, 'BYD Seal', 1, 726000000, 0, 'photo/Cgrxtg0Yrr7VMDjZrYwbsbxDMldat9ceZNZ10YLX.jpg', '2025-05-09 01:27:40', '2025-05-19 11:34:23'),
+(29, 'Lamborghini Revuelto', 5, 30000000000, 0, 'photo/8hTvDX5d5Zelj70aBBeDaFiNW0uJxur6e5ZWSCvr.jpg', '2025-05-09 01:43:32', '2025-05-19 11:42:10');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `riwayat_stock`
+--
+
+CREATE TABLE `riwayat_stock` (
+  `id` int NOT NULL,
+  `id_product` int NOT NULL,
+  `tipe` enum('masuk','keluar') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `quantity` int NOT NULL,
+  `created_at` timestamp NOT NULL,
+  `updated_at` timestamp NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `riwayat_stock`
+--
+
+INSERT INTO `riwayat_stock` (`id`, `id_product`, `tipe`, `quantity`, `created_at`, `updated_at`) VALUES
+(15, 26, 'masuk', 5, '2025-05-27 01:43:17', '2025-05-27 01:43:17'),
+(16, 26, 'keluar', 1, '2025-06-11 02:24:25', '2025-06-11 02:24:25'),
+(17, 26, 'masuk', 2, '2025-06-26 13:47:44', '2025-06-26 13:47:44'),
+(18, 26, 'masuk', 5, '2025-06-26 14:08:26', '2025-06-26 14:08:26');
+
+--
+-- Triggers `riwayat_stock`
+--
+DELIMITER $$
+CREATE TRIGGER `sriwayat` AFTER INSERT ON `riwayat_stock` FOR EACH ROW BEGIN
+    IF NEW.tipe = 'masuk' THEN
+        UPDATE products
+        SET stock = stock + NEW.quantity
+        WHERE id = NEW.id_product;
+    ELSE
+        UPDATE products
+        SET stock = stock - NEW.quantity
+        WHERE id = NEW.id_product;
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -224,7 +271,8 @@ CREATE TABLE `roles` (
 --
 
 INSERT INTO `roles` (`id`, `name`, `full_name`, `guard_name`, `created_at`, `updated_at`) VALUES
-(1, 'admin', 'Administrator', 'api', '2025-03-20 06:29:54', '2025-03-20 06:29:54');
+(1, 'admin', 'Administrator', 'api', '2025-03-20 06:29:54', '2025-03-20 06:29:54'),
+(2, 'sales', 'sales', 'api', '2025-05-19 07:18:05', '2025-05-19 07:18:05');
 
 -- --------------------------------------------------------
 
@@ -252,7 +300,12 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (9, 1),
 (10, 1),
 (11, 1),
-(12, 1);
+(12, 1),
+(13, 1),
+(9, 2),
+(10, 2),
+(11, 2),
+(12, 2);
 
 -- --------------------------------------------------------
 
@@ -294,6 +347,10 @@ CREATE TABLE `transactions` (
   `id` int NOT NULL,
   `transaction_code` varchar(100) NOT NULL,
   `total` float NOT NULL,
+  `seller` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `metode_pembayaran` varchar(100) NOT NULL,
+  `status` varchar(100) DEFAULT NULL,
+  `paid_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL,
   `updated_at` timestamp NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -302,16 +359,24 @@ CREATE TABLE `transactions` (
 -- Dumping data for table `transactions`
 --
 
-INSERT INTO `transactions` (`id`, `transaction_code`, `total`, `created_at`, `updated_at`) VALUES
-(16, 'TRX-ASGRNV', 3300000000, '2025-04-15 12:33:06', '2025-04-15 12:33:06'),
-(21, 'TRX-99YRAIU3', 5600000000, '2025-04-15 21:07:40', '2025-04-15 21:07:40'),
-(24, 'TRX-ZDKYTNDK', 2240000000, '2025-04-16 01:29:45', '2025-04-16 01:29:45'),
-(25, 'TRX-3EXYQIWI', 2240000000, '2025-04-16 01:30:08', '2025-04-16 01:30:08'),
-(28, 'TRX-HX3ANXX8', 5600000000, '2025-04-16 01:54:19', '2025-04-16 01:54:19'),
-(31, 'TRX-ZUP0I6NI', 560000000, '2025-04-16 18:50:39', '2025-04-16 18:50:39'),
-(32, 'TRX-VJP6C0GH', 5600000000, '2025-04-16 19:57:20', '2025-04-16 19:57:20'),
-(37, 'TRX-EEQFI8WB', 560000000, '2025-04-16 20:52:41', '2025-04-16 20:52:41'),
-(39, 'TRX-EWVVKZWS', 288960000, '2025-04-20 20:24:53', '2025-04-20 20:24:53');
+INSERT INTO `transactions` (`id`, `transaction_code`, `total`, `seller`, `metode_pembayaran`, `status`, `paid_at`, `created_at`, `updated_at`) VALUES
+(171, 'TRX-XO9N00GP', 322560000, 'Admin', 'Cash', NULL, NULL, '2025-06-11 02:24:25', '2025-06-11 02:24:25'),
+(172, 'TRX-SE1JBYFY', 813120000, 'Admin', 'Debit', NULL, NULL, '2025-06-26 12:34:33', '2025-06-26 12:34:33'),
+(173, 'TRX-NGKXMORE', 813120000, 'Admin', 'Debit', NULL, NULL, '2025-06-26 12:36:20', '2025-06-26 12:36:20'),
+(176, 'TRX-OLXC70KF', 33600000000, 'Admin', 'Debit', 'pending', NULL, '2025-06-26 12:40:15', '2025-06-26 12:40:15'),
+(177, 'TRX-WHGRT0LN', 322560000, 'Admin', 'Debit', 'pending', NULL, '2025-06-26 12:53:08', '2025-06-26 12:53:08'),
+(178, 'TRX-ATVX3VF9', 322560000, 'Admin', 'Debit', 'pending', NULL, '2025-06-26 13:08:18', '2025-06-26 13:08:18'),
+(179, 'TRX-HDDPXFQ9', 322560000, 'Admin', 'Debit', 'pending', NULL, '2025-06-26 13:33:17', '2025-06-26 13:33:17'),
+(180, 'TRX-PG2IT8NX', 33600000000, 'Admin', 'Debit', 'pending', NULL, '2025-06-26 13:39:44', '2025-06-26 13:39:44'),
+(181, 'TRX-LHIZF5TQ', 322560000, 'Admin', 'Debit', 'pending', NULL, '2025-06-26 13:47:54', '2025-06-26 13:47:54'),
+(182, 'TRX-NKYUATTN', 322560000, 'Admin', 'Debit', 'PAID', NULL, '2025-06-26 13:53:30', '2025-06-26 14:04:06'),
+(183, 'TRX-HQDDYEII', 322560000, 'Admin', 'Debit', 'PENDING', NULL, '2025-06-26 14:08:45', '2025-06-26 14:08:45'),
+(184, 'TRX-LITCP1NJ', 504000000000, 'Admin', 'Debit', 'PENDING', NULL, '2025-06-26 14:40:53', '2025-06-26 14:40:53'),
+(185, 'TRX-R21NQF13', 322560000, 'Admin', 'Debit', 'PENDING', NULL, '2025-06-26 14:41:22', '2025-06-26 14:41:22'),
+(186, 'TRX-8PDKTHVU', 322560000, 'Admin', 'Debit', 'PENDING', NULL, '2025-06-26 14:46:15', '2025-06-26 14:46:15'),
+(187, 'TRX-C7XLRANU', 813120000, 'Admin', 'Debit', 'PENDING', NULL, '2025-06-30 01:31:40', '2025-06-30 01:31:40'),
+(188, 'TRX-IXOWVI5R', 813120000, 'Admin', 'Debit', 'PENDING', NULL, '2025-06-30 01:49:20', '2025-06-30 01:49:20'),
+(189, 'TRX-LNNHACDV', 322560000, 'Admin', 'Debit', 'PENDING', NULL, '2025-06-30 01:53:09', '2025-06-30 01:53:09');
 
 -- --------------------------------------------------------
 
@@ -333,16 +398,31 @@ CREATE TABLE `transaction_product` (
 --
 
 INSERT INTO `transaction_product` (`id`, `id_product`, `id_transaksi`, `quantity`, `created_at`, `updated_at`) VALUES
-(1, 24, 16, 2, '2025-04-15 12:36:13', '2025-04-15 12:36:13'),
-(2, 22, 16, 1, '2025-04-15 12:40:52', '2025-04-15 12:40:52'),
-(3, 23, 21, 1, '2025-04-15 21:07:40', '2025-04-15 21:07:40'),
-(6, 22, 24, 1, '2025-04-16 01:29:45', '2025-04-16 01:29:45'),
-(7, 22, 25, 1, '2025-04-16 01:30:08', '2025-04-16 01:30:08'),
-(9, 23, 28, 1, '2025-04-16 01:54:19', '2025-04-16 01:54:19'),
-(10, 24, 31, 1, '2025-04-16 18:50:39', '2025-04-16 18:50:39'),
-(11, 23, 32, 1, '2025-04-16 19:57:20', '2025-04-16 19:57:20'),
-(12, 24, 37, 1, '2025-04-16 20:52:41', '2025-04-16 20:52:41'),
-(14, 26, 39, 1, '2025-04-20 20:24:53', '2025-04-20 20:24:53');
+(158, 26, 171, 1, '2025-06-11 02:24:25', '2025-06-11 02:24:25'),
+(159, 28, 172, 1, '2025-06-26 12:34:33', '2025-06-26 12:34:33'),
+(160, 28, 173, 1, '2025-06-26 12:36:21', '2025-06-26 12:36:21'),
+(161, 29, 176, 1, '2025-06-26 12:40:15', '2025-06-26 12:40:15'),
+(162, 26, 177, 1, '2025-06-26 12:53:08', '2025-06-26 12:53:08'),
+(163, 26, 178, 1, '2025-06-26 13:08:18', '2025-06-26 13:08:18'),
+(164, 26, 179, 1, '2025-06-26 13:33:17', '2025-06-26 13:33:17'),
+(165, 29, 180, 1, '2025-06-26 13:39:44', '2025-06-26 13:39:44'),
+(166, 26, 181, 1, '2025-06-26 13:47:54', '2025-06-26 13:47:54'),
+(167, 26, 182, 1, '2025-06-26 13:53:30', '2025-06-26 13:53:30'),
+(168, 26, 183, 1, '2025-06-26 14:08:45', '2025-06-26 14:08:45'),
+(169, 22, 184, 1, '2025-06-26 14:40:53', '2025-06-26 14:40:53'),
+(170, 26, 185, 1, '2025-06-26 14:41:22', '2025-06-26 14:41:22'),
+(171, 26, 186, 1, '2025-06-26 14:46:15', '2025-06-26 14:46:15'),
+(172, 28, 187, 1, '2025-06-30 01:31:40', '2025-06-30 01:31:40'),
+(173, 28, 188, 1, '2025-06-30 01:49:20', '2025-06-30 01:49:20'),
+(174, 26, 189, 1, '2025-06-30 01:53:09', '2025-06-30 01:53:09');
+
+--
+-- Triggers `transaction_product`
+--
+DELIMITER $$
+CREATE TRIGGER `minstok` AFTER INSERT ON `transaction_product` FOR EACH ROW UPDATE products SET stock = stock - new.quantity WHERE id = new.id_product
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -368,7 +448,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `uuid`, `name`, `email`, `phone`, `photo`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'eee3f544-b437-481b-b128-54356bb9ebc7', 'Admin', 'admin@gmail.com', '08123456789', NULL, '$2y$12$BWLPJxH/iyTaJaFjzTKdj.bidfaLZZhTawRAb2ET17J4/RRIkBpWW', NULL, '2025-03-20 06:29:57', '2025-03-20 06:29:57');
+(1, 'eee3f544-b437-481b-b128-54356bb9ebc7', 'Admin', 'admin@gmail.com', '08123456789', NULL, '$2y$12$BWLPJxH/iyTaJaFjzTKdj.bidfaLZZhTawRAb2ET17J4/RRIkBpWW', NULL, '2025-03-20 06:29:57', '2025-03-20 06:29:57'),
+(3, '6f88fd18-5e21-495f-9be3-839308162a26', 'sales', 'sales@gmail.com', '09988754785', NULL, '$2y$12$QMq1wirhJh3LcipuxDtGEu6WL5Gt9w8n8SW5ugwdJK69yznKBR0Ga', NULL, '2025-05-19 07:18:51', '2025-05-19 07:18:51');
 
 --
 -- Indexes for dumped tables
@@ -436,6 +517,13 @@ ALTER TABLE `products`
   ADD KEY `id_category` (`id_category`);
 
 --
+-- Indexes for table `riwayat_stock`
+--
+ALTER TABLE `riwayat_stock`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_product` (`id_product`);
+
+--
 -- Indexes for table `roles`
 --
 ALTER TABLE `roles`
@@ -468,7 +556,7 @@ ALTER TABLE `transactions`
 ALTER TABLE `transaction_product`
   ADD PRIMARY KEY (`id`),
   ADD KEY `PRODUCT` (`id_product`),
-  ADD KEY `TRANSAKSI` (`id_transaksi`);
+  ADD KEY `id_transaksi` (`id_transaksi`);
 
 --
 -- Indexes for table `users`
@@ -487,7 +575,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `failed_jobs`
@@ -505,7 +593,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT for table `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `personal_access_tokens`
@@ -517,13 +605,19 @@ ALTER TABLE `personal_access_tokens`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+
+--
+-- AUTO_INCREMENT for table `riwayat_stock`
+--
+ALTER TABLE `riwayat_stock`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `settings`
@@ -535,19 +629,19 @@ ALTER TABLE `settings`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=190;
 
 --
 -- AUTO_INCREMENT for table `transaction_product`
 --
 ALTER TABLE `transaction_product`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=175;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables
@@ -570,6 +664,12 @@ ALTER TABLE `model_has_roles`
 --
 ALTER TABLE `products`
   ADD CONSTRAINT `id_category` FOREIGN KEY (`id_category`) REFERENCES `categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `riwayat_stock`
+--
+ALTER TABLE `riwayat_stock`
+  ADD CONSTRAINT `riwayat` FOREIGN KEY (`id_product`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `role_has_permissions`

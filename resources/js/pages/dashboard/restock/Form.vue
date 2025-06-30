@@ -71,7 +71,7 @@ function submit() {
                 </label>
                 <Field name="id_product" v-model="riwayat.id_product">
                     <select2
-                        placeholder="Pilih Kategori"
+                        placeholder="Pilih Product"
                         class="form-select-solid"
                         :options="products"
                         v-model="riwayat.id_product"
@@ -94,7 +94,7 @@ function submit() {
                     class="form-control"
                     v-model="riwayat.quantity"
                     placeholder="Masukkan quantity"
-                />
+                /> 
                 <ErrorMessage name="stock" class="text-danger" />
             </div>
 <!--            </div>-->

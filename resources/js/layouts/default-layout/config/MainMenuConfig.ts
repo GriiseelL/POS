@@ -72,7 +72,7 @@ const MainMenuConfig: Array<MenuItem> = [
                 heading: "Restock",
                 route: "/dashboard/restock",
                 name: "restock",
-                keenthemesIcon: "bill",
+                keenthemesIcon: "add-item",
             },
             {
                 heading: "Transaction",

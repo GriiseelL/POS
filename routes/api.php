@@ -95,5 +95,7 @@ Route::post('xendit/store', [TransactionController::class, 'createXendit']);
 Route::post('xendit/struk', [TransactionController::class, 'generateReceipt']);
 Route::post('xendit/struk/cash', [TransactionController::class, 'generateReceiptCash']);
 Route::get('/detail-transaction/{code}', [TransactionController::class, 'byCode']);
+Route::post('/xendit/webhook', [TransactionController::class, 'handle']);
+
 
 Route::get('chart-js', [chartController::class, 'getData']);

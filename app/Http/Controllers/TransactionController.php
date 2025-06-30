@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
@@ -64,7 +65,9 @@ class TransactionController extends Controller
                 'total' => $total,
                 'metode_pembayaran' => $data['metode_pembayaran'],
                 'seller' => Auth::user()->name,
+                'status' => 'PENDING'
             ]);
+            // dd($transaction);
 
             foreach ($items as $item) {
                 $prod = DB::table('products')->find($item['id_product']);
@@ -77,7 +80,7 @@ class TransactionController extends Controller
                     'id_product' => $item['id_product'],
                     'quantity' => $item['quantity'],
                 ]);
-//                 DB::table('products')->where('id', $item['id_product'])
+                //                 DB::table('products')->where('id', $item['id_product'])
 //                     ->update(['stock' => $prod->stock - $item['quantity']]);
             }
 
@@ -104,11 +107,13 @@ class TransactionController extends Controller
             // return response()->json('sukses', 500);
 
             try {
+
                 $result = $apiInstance->createInvoice($invoice);
                 // return response()->json($result, 500);
                 return response()->json([
                     'success' => true,
                     'transaction' => $transaction,
+                    'transaction_code' => $transactionCode,
                     // 'transaction_code' => $transactionCode,    // ← tambahkan ini
                     'payment_url' => $result['invoice_url'],
                 ], 201);
@@ -122,13 +127,13 @@ class TransactionController extends Controller
 
 
         } catch (\Exception $e) {
-              return response()->json([
-                  'success' => false,
-                  'message' => $e->getMessage(),
-                  'file' => $e->getFile(),
-                  'line' => $e->getLine(),
-              ], 500);
-          }
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], 500);
+        }
 
     }
 
@@ -229,15 +234,15 @@ class TransactionController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                 DB::table('riwayat_stock')->insert([
-                        'id_product' => $item['id_product'],
-                        'quantity' => $item['quantity'],
-                        'tipe' => 'keluar',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                DB::table('riwayat_stock')->insert([
+                    'id_product' => $item['id_product'],
+                    'quantity' => $item['quantity'],
+                    'tipe' => 'keluar',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
-//                 DB::table('products')->where('id', $item['id_product'])->update([
+                //                 DB::table('products')->where('id', $item['id_product'])->update([
 //                     'stock' => $prod->stock - $item['quantity'],
 //                 ]);
 
@@ -327,6 +332,45 @@ class TransactionController extends Controller
             'transactions' => $details
         ]);
     }
+
+
+    public function handle(Request $request)
+    {
+        $data = $request->all();
+
+        Log::info('Webhook DITERIMA:', $data);
+
+        $status = $data['status'] ?? ($data['data']['status'] ?? null);
+        $externalId = $data['external_id'] ?? ($data['data']['external_id'] ?? null);
+
+        // Abaikan webhook dummy dari Xendit
+        if ($externalId === 'invoice_123124123' || ($data['payer_email'] ?? '') === 'wildan@xendit.co') {
+            Log::info('Webhook dummy/test DIABAIAKAN');
+            return response()->json(['message' => 'Ignored test webhook'], 200);
+        }
+
+        // Abaikan jika externalId tidak sesuai pola transaksi kamu
+        if (!Str::startsWith($externalId, 'trx-')) {
+            Log::warning('Webhook DIABAIAKAN karena external_id tidak valid', ['external_id' => $externalId]);
+            return response()->json(['message' => 'Ignored invalid external_id'], 200);
+        }
+
+        $transaction = Transaction::where('transaction_code', $externalId)->first();
+
+        if (!$transaction) {
+            Log::warning('Transaksi tidak ditemukan', ['external_id' => $externalId]);
+            return response()->json(['message' => 'Transaction not found'], 404);
+        }
+
+        if ($status === 'PAID') {
+            $transaction->update(['status' => 'PAID']);
+            Log::info('Transaksi DIUPDATE ke PAID', ['id' => $transaction->id]);
+        }
+
+        return response()->json(['message' => 'OK'], 200);
+    }
+
+
 
 
     public function download_pdf()

@@ -19,6 +19,7 @@ class Transaction extends Model
         "total",
         "seller",
         "quantity",
+        'status'
     ];
 
     protected $table = 'transactions';
