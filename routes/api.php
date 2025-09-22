@@ -79,11 +79,10 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
         Route::post('transaction', [TransactionController::class, 'index']);
         Route::post('transaction/store', [TransactionController::class, 'store'])->middleware('api');
         Route::get('transaction/detail/{id_transaksi}', [TransactionController::class, 'show']);
-        Route::get('transaction/view/pdf', [TransactionController::class, 'view_pdf']);
         Route::apiResource('transaction', TransactionController::class)
-            ->except(['index', 'store']);
+        ->except(['index', 'store']);
     });
-
+    
     Route::middleware('can:restock')->group(function () {
         Route::get('restock', [restockController::class, 'get'])->withoutMiddleware('can:restock');
         Route::post('restock', [restockController::class, 'index']);
@@ -95,6 +94,7 @@ Route::post('xendit/store', [TransactionController::class, 'createXendit']);
 Route::post('xendit/struk', [TransactionController::class, 'generateReceipt']);
 Route::post('xendit/struk/cash', [TransactionController::class, 'generateReceiptCash']);
 Route::get('/detail-transaction/{code}', [TransactionController::class, 'byCode']);
+Route::get('transaction/download-pdf', [TransactionController::class, 'download_pdf']);
 Route::post('/xendit/webhook', [TransactionController::class, 'handle']);
 
 

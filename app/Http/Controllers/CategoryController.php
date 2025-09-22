@@ -13,11 +13,19 @@ use Illuminate\Support\Facades\Storage;
 class CategoryController extends Controller
 {
 
+    // public function get(Request $request)
+    // {
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => Category::all()
+    //     ]);
+    // }
+
     public function get(Request $request)
     {
         return response()->json([
             'success' => true,
-            'data' => Category::all()
+            'data' => Category::withCount('products')->get()
         ]);
     }
 
@@ -29,7 +37,7 @@ class CategoryController extends Controller
         DB::statement('set @no=0+' . $page * $per);
         $data = Category::when($request->search, function (Builder $query, string $search) {
             $query->where('name', 'like', "%$search%");
-                // ->orWhere('category', 'like', "%$search%");
+            // ->orWhere('category', 'like', "%$search%");
         })->latest()->paginate($per, ['*', DB::raw('@no := @no + 1 AS no')]);
 
         return response()->json($data);
@@ -61,7 +69,7 @@ class CategoryController extends Controller
         ]);
     }
 
-     public function update(CategoryRequest $request, Category $category)
+    public function update(CategoryRequest $request, Category $category)
     {
         $validatedData = $request->validated();
 
@@ -74,7 +82,7 @@ class CategoryController extends Controller
         ]);
 
         // $product->syncPermissions($validatedData['permissions']);
-        
+
         return response()->json([
             'success' => true,
             'product' => $category
@@ -87,7 +95,7 @@ class CategoryController extends Controller
         if ($category->photo) {
             Storage::disk('public')->delete($category->photo);
         }
-        
+
         $category->delete();
 
         return response()->json([

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Mpdf\Mpdf;
 use App\Http\Requests\TransactionRequest;
 use App\Models\Transaction;
 use App\Models\Transaction_product;
@@ -15,6 +16,8 @@ use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
 use Xendit\Invoice\CreateInvoiceRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
+
 
 
 
@@ -98,9 +101,8 @@ class TransactionController extends Controller
                 'currency' => 'IDR',
                 'reminder_time' => 1,
                 'success_redirect_url' => env('APP_URL')
-                    . '/dashboard/transaction?code='
-                    . $transactionCode
-                    . '&print=true',
+                    . '/payment/success?transaction_code='
+                    . $transactionCode,
             ]); // \Xendit\Invoice\CreateInvoiceRequest
             // $for_user_id = "62efe4c33e45694d63f585f0"; // string | Business ID of the sub-account merchant (XP feature)
 
@@ -214,6 +216,7 @@ class TransactionController extends Controller
                 'total' => $total,
                 'metode_pembayaran' => $data['metode_pembayaran'],
                 'seller' => Auth::user()->name,
+                'status' => 'PAID'
                 // 'seller' => $data['seller'],   // kalau memang ada
             ]);
 
@@ -349,11 +352,7 @@ class TransactionController extends Controller
             return response()->json(['message' => 'Ignored test webhook'], 200);
         }
 
-        // Abaikan jika externalId tidak sesuai pola transaksi kamu
-        if (!Str::startsWith($externalId, 'trx-')) {
-            Log::warning('Webhook DIABAIAKAN karena external_id tidak valid', ['external_id' => $externalId]);
-            return response()->json(['message' => 'Ignored invalid external_id'], 200);
-        }
+        // Tidak lagi validasi harus 'trx-' atau 'TRX-', karena format kamu pakai 'TRX-...'
 
         $transaction = Transaction::where('transaction_code', $externalId)->first();
 
@@ -362,29 +361,31 @@ class TransactionController extends Controller
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
+        Log::info('Transaksi ditemukan', [
+            'transaction_code' => $transaction->transaction_code,
+            'status_sekarang' => $transaction->status,
+            'status_dari_webhook' => $status
+        ]);
+
         if ($status === 'PAID') {
             $transaction->update(['status' => 'PAID']);
             Log::info('Transaksi DIUPDATE ke PAID', ['id' => $transaction->id]);
+        } elseif ($status === 'EXPIRED') {
+            $transaction->update(['status' => 'EXPIRED']);
+            Log::info('Transaksi DIUPDATE ke EXPIRED', ['id' => $transaction->id]);
         }
 
         return response()->json(['message' => 'OK'], 200);
     }
 
 
-
-
     public function download_pdf()
     {
         $mpdf = new \Mpdf\Mpdf();
-
-        $data = Transaction::with('details.product')
-            ->select('id', 'transaction_code', 'total', 'created_at')
-            ->get();
-
+        $data = Transaction::with('details.product')->select('id', 'transaction_code', 'total', 'created_at')->get();
         $html = view('laporan', ['transactions' => $data])->render();
-
         $mpdf->WriteHTML($html);
-        $mpdf->Output('laporan-penjualan.pdf', 'D'); // "D" = langsung download
+        $mpdf->Output('laporan-penjualan.pdf', 'D');// "D" = langsung download }
     }
 
     // Di Controller Laravel
@@ -393,55 +394,94 @@ class TransactionController extends Controller
         $data = $request->all(); // data struk
         return view('struk', $data)->render(); // kirim HTML string
     }
-
     public function generateReceiptCash(Request $request)
     {
-        // Ambil langsung dari request
         $transaction_code = $request->input('transaction_code');
-        $rawItems = $request->input('items', []);  // array item: tiap elemen berisi ['product' => […], 'quantity' => …]
-        $subtotal = $request->input('subtotal', 0);
-        $tax = $request->input('tax', 0);
-        $total = $request->input('total', $subtotal + $tax);
-        $seller = $request->input('seller', Auth::user()->name ?? 'Guest');
+        $payment_method = $request->input('payment_method', 'cash'); // default cash
 
+        // Cek apakah data lengkap dikirim dari frontend
+        if ($request->has('items') && $request->has('subtotal')) {
+            // Scenario 1: Data lengkap dari frontend
+            $rawItems = $request->input('items', []);
+            $subtotal = $request->input('subtotal', 0);
+            $tax = $request->input('tax', 0);
+            $total = $request->input('total', $subtotal + $tax);
+            $seller = $request->input('seller', Auth::user()->name ?? 'Kasir');
 
-        // Bungkus ke dalam key 'details'
-        $items = [
-            'details' => array_map(function ($i) {
-                return [
-                    'product' => [
-                        'name' => $i['name'],
-                        'price' => $i['price'],
-                    ],
-                    'quantity' => $i['quantity'],
+            $items = [
+                'details' => array_map(function ($i) {
+                    return [
+                        'product' => [
+                            'name' => $i['name'] ?? 'Unknown',
+                            'price' => $i['price'] ?? 0,
+                        ],
+                        'quantity' => $i['quantity'] ?? 0,
+                    ];
+                }, $rawItems),
+            ];
+        } else {
+            // Scenario 2: Hanya transaction_code, ambil dari database
+            try {
+                $transaction = \App\Models\Transaction::where('transaction_code', $transaction_code)
+                    ->with(['transactionItems', 'transactionItems.product'])
+                    ->first();
+
+                if (!$transaction) {
+                    return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
+                }
+
+                // Build items dari database
+                $items = [
+                    'details' => $transaction->transactionItems->map(function ($item) {
+                        return [
+                            'product' => [
+                                'name' => $item->product->name ?? $item->name ?? 'Unknown',
+                                'price' => $item->price ?? 0,
+                            ],
+                            'quantity' => $item->quantity ?? 0,
+                        ];
+                    })->toArray(),
                 ];
-            }, $rawItems),
-        ];
 
-        // Kirim ke view
+                // Hitung total dari database
+                $subtotal = $transaction->transactionItems->sum(function ($item) {
+                    return $item->price * $item->quantity;
+                });
+                $tax = $subtotal * 0.12;
+                $total = $subtotal + $tax;
+                $seller = Auth::user()->name ?? 'Kasir';
+                $payment_method = $transaction->metode_pembayaran ?? 'cash';
+
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Gagal mengambil data transaksi: ' . $e->getMessage()], 500);
+            }
+        }
+
+        // Format payment method untuk display
+        $payment_display = [
+            'cash' => 'TUNAI',
+            'transfer' => 'TRANSFER BANK',
+            'qris' => 'QRIS',
+            'xendit' => 'DIGITAL PAYMENT'
+        ][$payment_method] ?? strtoupper($payment_method);
+
+        // Generate HTML receipt
         $receiptHtml = view('struk', compact(
             'transaction_code',
             'items',
             'subtotal',
             'tax',
             'total',
-            'seller'
+            'seller',
+            'payment_method',
+            'payment_display'
         ))->render();
 
         return response()->json(['data' => $receiptHtml]);
     }
-
-
-
-
     public function byCode($code)
     {
-
-
-        // return response()->json('suks/es', 500);
-
-
-        $transactions = Transaction::with('details')
+        $transactions = Transaction::with('details.product')
             ->where('transaction_code', $code)
             ->first();
 
@@ -449,27 +489,65 @@ class TransactionController extends Controller
             return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
         }
 
-
-        // $first = $transactions->first();
-        $details = $transactions->details;
         $subtotal = 0;
-
-        foreach ($details as $item) {
+        foreach ($transactions->details as $item) {
             $subtotal += $item->product->price * $item->quantity;
         }
+        $tax = $subtotal * 0.12;
+        $total = $subtotal + $tax;
 
-        $taxRate = 0.12;
-        $taxAmount = $subtotal * $taxRate;
-        $total = $subtotal + $taxAmount;
+        // Generate receipt HTML (existing functionality)
+        $receiptHtml = view('struk', [
+            'transaction_code' => $transactions->transaction_code,
+            'items' => ['details' => $transactions->details],
+            'subtotal' => $subtotal,
+            'tax' => $tax,
+            'total' => $total,
+            'seller' => $transactions->seller ?? Auth::user()->name ?? 'Kasir',
+            'payment_method' => $transactions->metode_pembayaran ?? 'cash',
+            'payment_display' => [
+                'cash' => 'TUNAI',
+                'transfer' => 'TRANSFER BANK',
+                'qris' => 'QRIS',
+                'xendit' => 'DIGITAL PAYMENT'
+            ][$transactions->metode_pembayaran ?? 'cash'] ?? strtoupper($transactions->metode_pembayaran ?? 'cash')
+        ])->render();
 
+        // Format transaction data untuk React Native
+        $transactionData = [
+            'id' => $transactions->id,
+            'transaction_code' => $transactions->transaction_code,
+            'status' => $transactions->status ?? 'PAID', // default PAID jika ada di database
+            'metode_pembayaran' => $transactions->metode_pembayaran ?? 'cash',
+            'total_amount' => $total,
+            'subtotal' => $subtotal,
+            'tax' => $tax,
+            'seller' => $transactions->seller ?? Auth::user()->name ?? 'Kasir',
+            'created_at' => $transactions->created_at,
+            'items' => $transactions->details->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->product->name ?? 'Unknown Product',
+                    'product_name' => $item->product->name ?? 'Unknown Product',
+                    'price' => (float) $item->product->price,
+                    'quantity' => (int) $item->quantity,
+                    'total' => (float) $item->product->price * (int) $item->quantity,
+                    'product' => [
+                        'id' => $item->product->id ?? null,
+                        'name' => $item->product->name ?? 'Unknown Product',
+                        'price' => (float) $item->product->price,
+                    ]
+                ];
+            })->toArray()
+        ];
 
         return response()->json([
-            'transaction_code' => $code,
-            'seller' => $transactions->seller,
-            'items' => $transactions,
-            'tax' => round($taxAmount),
-            'subtotal' => round($subtotal),
-            'total' => round($total),
+            'success' => true,
+            'message' => 'Transaksi ditemukan',
+            'transaction_code' => $transactions->transaction_code,
+            'receipt_html' => $receiptHtml,
+            'transaction' => $transactionData // tambahan untuk React Native
         ]);
     }
+
 }

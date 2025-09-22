@@ -89,41 +89,74 @@ class ProductController extends Controller
     }
 
 
+    // public function update(ProductRequest $request, Product $product)
+    // {
+    //     $validatedData = $request->validated();
+
+
+    //      unset($validatedData['stock']);
+
+    //     if ($request->hasFile('photo')) {
+    //         // Hapus foto lama kalau ada
+    //         if ($product->photo && \Storage::exists('public/' . $product->photo)) {
+    //             \Storage::delete('public/' . $product->photo);
+    //         }
+
+    //         // Simpan foto baru
+    //         $path = $request->file('photo')->store('photo', 'public');
+    //         $validatedData['photo'] = $path;
+    //     } else {
+    //         // Kalau tidak ada file baru dikirim, tetap pakai yang lama
+    //         unset($validatedData['photo']);
+    //     }
+
+    //     $product->update([
+    //         'name' => $validatedData['name'],
+    //         'id_category' => $validatedData['id_category'],
+    //         'price' => $validatedData['price'],
+    //         'photo' => $validatedData['photo'],
+    //     ]);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'product' => $product->load('category') // Pastikan kategori ikut dimuat setelah update
+    //     ]);
+    // }
+
+
     public function update(ProductRequest $request, Product $product)
     {
         $validatedData = $request->validated();
+        unset($validatedData['stock']); // Remove stock from validated data
 
-
-         unset($validatedData['stock']);
-
+        // Handle photo upload
         if ($request->hasFile('photo')) {
-            // Hapus foto lama kalau ada
+            // Delete old photo if exists
             if ($product->photo && \Storage::exists('public/' . $product->photo)) {
                 \Storage::delete('public/' . $product->photo);
             }
-
-            // Simpan foto baru
+            // Store new photo
             $path = $request->file('photo')->store('photo', 'public');
             $validatedData['photo'] = $path;
         } else {
-            // Kalau tidak ada file baru dikirim, tetap pakai yang lama
-            unset($validatedData['photo']);
+            // If no new file uploaded, keep the existing photo
+            $validatedData['photo'] = $product->photo; // Keep existing photo
+            // Don't unset here because we need it for the update
         }
 
         $product->update([
             'name' => $validatedData['name'],
             'id_category' => $validatedData['id_category'],
             'price' => $validatedData['price'],
-//             'stock' => $validatedData['stock'],
-            'photo' => $validatedData['photo'],
+            'photo' => $validatedData['photo'], // This will now always have a value
         ]);
 
         return response()->json([
             'success' => true,
-            'product' => $product->load('category') // Pastikan kategori ikut dimuat setelah update
+            'product' => $product->load('category')
         ]);
     }
-
+    
     public function destroy(Product $product)
     {
 
